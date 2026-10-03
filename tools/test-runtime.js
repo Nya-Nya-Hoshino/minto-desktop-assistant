@@ -1,0 +1,4 @@
+'use strict';
+const fs=require('node:fs');const path=require('node:path');const {VoiceRuntime}=require('../services/voice-runtime');const {VoiceService}=require('../services/voice-service');
+const root=path.join(__dirname,'..','_data','runtime-verification');const runtime=new VoiceRuntime(root);
+(async()=>{try{await runtime.start();const service=new VoiceService(runtime.config({engine:'bundled',model_id:'0',length:1,style_weight:1}));const models=await service.info();const started=Date.now();const bytes=await service.synthesize('マスター、今日もお疲れさまなのです。ボクはここで待っているのです。');fs.writeFileSync(path.join(root,'Minto_1000_new_sentence.wav'),bytes);console.log(JSON.stringify({ok:true,models:Object.keys(models),speakers:models['0'].spk2id,styles:models['0'].style2id,bytes:bytes.length,elapsedMs:Date.now()-started}));}catch(error){console.error(error.stack);process.exitCode=1;}finally{runtime.stop();}})();

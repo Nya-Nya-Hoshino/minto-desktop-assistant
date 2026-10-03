@@ -1,0 +1,148 @@
+{
+  "name": "minto-assistant",
+  "version": "0.1.0",
+  "description": "Minto Live2D desktop assistant with Japanese dialogue and local voice",
+  "license": "Apache-2.0",
+  "main": "main.js",
+  "scripts": {
+    "start": "node start.js",
+    "test": "node --test tests/*.test.js",
+    "build": "node tools/package-release.js",
+    "build:installer": "electron-builder --win nsis --x64",
+    "build:portable": "node tools/package-release.js --portable-only",
+    "package:audit": "node tools/package-audit.js"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "electron": "44.3.0",
+    "electron-builder": "^25.1.0",
+    "png-to-ico": "^3.0.1",
+    "sharp": "^0.34.5"
+  },
+  "build": {
+    "appId": "local.minto.assistant",
+    "productName": "MintoAssistant",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "electronDist": "node_modules/electron/dist",
+    "electronVersion": "44.3.0",
+    "npmRebuild": false,
+    "compression": "normal",
+    "artifactName": "MintoAssistant-${version}-windows-${arch}.${ext}",
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer/index.html",
+      "renderer/chat.js",
+      "renderer/pet-controller.js",
+      "renderer/settings.html",
+      "renderer/settings.js",
+      "services/assistant-service.js",
+      "services/save-store.js",
+      "services/settings-store.js",
+      "services/observation-service.js",
+      "services/voice-service.js",
+      "services/voice-runtime.js",
+      "libs/live2dcubismcore.min.js",
+      "libs/pixi.min.js",
+      "libs/cubism4.min.js",
+      "assets/persona.json",
+      "assets/skins.json",
+      "assets/minto/**/*",
+      "icon/logo.png",
+      "LICENSE",
+      "NOTICE",
+      "build/THIRD_PARTY_NOTICES.md",
+      "i18n.js"
+    ],
+    "asarUnpack": [
+      "assets/minto/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "runtime",
+        "to": "runtime",
+        "filter": [
+          "**/*",
+          "!**/__pycache__{,/**/*}",
+          "!**/*.{pyc,pyo,lib,h,hpp,pdb,exp}",
+          "!**/{tests,test,__tests__}{,/**/*}",
+          "!python/Lib/site-packages/torch/include{,/**/*}",
+          "!python/Lib/site-packages/Library/bin{,/**/*}",
+          "!bert/deberta-v2-large-japanese-char-wwm-onnx{,/**/*}",
+          "!python/Lib/site-packages/transformers/models/deprecated/trajectory_transformer/convert_trajectory_transformer_original_pytorch_checkpoint_to_pytorch.py"
+        ]
+      },
+      {
+        "from": "build/Style-Bert-VITS2-source.zip",
+        "to": "runtime/licenses/Style-Bert-VITS2-source.zip"
+      }
+    ],
+    "extraFiles": [
+      {
+        "from": "README.md",
+        "to": "README.md"
+      },
+      {
+        "from": "build/THIRD_PARTY_NOTICES.md",
+        "to": "THIRD_PARTY_NOTICES.md"
+      },
+      {
+        "from": "README.en.md",
+        "to": "README.en.md"
+      },
+      {
+        "from": "README.ja.md",
+        "to": "README.ja.md"
+      },
+      {
+        "from": "docs/TRAINING.en.md",
+        "to": "docs/TRAINING.en.md"
+      },
+      {
+        "from": "docs/TRAINING.ja.md",
+        "to": "docs/TRAINING.ja.md"
+      }
+    ],
+    "win": {
+      "requestedExecutionLevel": "asInvoker",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowElevation": false,
+      "packElevateHelper": false,
+      "allowToChangeInstallationDirectory": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "MintoAssistant",
+      "installerLanguages": [
+        "zh_CN",
+        "en_US",
+        "ja_JP"
+      ],
+      "include": "build/installer.nsh",
+      "artifactName": "MintoAssistant-Setup-${version}-windows-${arch}.exe",
+      "runAfterFinish": false,
+      "displayLanguageSelector": true
+    }
+  },
+  "author": "Minto Assistant contributors"
+}
