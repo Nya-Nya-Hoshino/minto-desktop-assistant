@@ -12,7 +12,7 @@ The source repository contains the application code and documentation. Copyright
 
 ## Run a local distribution
 
-For the installer edition, run `MintoAssistant-Setup-0.1.0-windows-x64.exe` and select an installation directory. Installation is for the current Windows user.
+For the installer edition, run `MintoAssistant-Setup-0.1.5-windows-x64.exe` and select an installation directory. Installation is for the current Windows user.
 
 For the portable edition, extract the complete ZIP into a writable directory and run `MintoAssistant.exe`. Keep `portable.flag`, `resources`, and all DLLs together with the executable. Portable user data is stored in its adjacent `data` directory.
 
@@ -84,3 +84,7 @@ In your GitHub source checkout, run `git pull`. Restore or verify those local in
 For the installer edition, run the rebuilt installer as the same Windows user and keep the backed-up application data. For the portable edition, close the old app, extract the new ZIP into a separate writable directory, and copy the backed-up `data` folder into that new directory before starting it. Preserve the entire data folder, including imported voice models, rather than copying only conversation exports. Keep the original backup until saves, settings, and voice playback have been checked in the new version.
 
 The inherited Apache-2.0 `LICENSE` and `NOTICE` are retained. Component notices are in `THIRD_PARTY_NOTICES.md` in a distribution and the runtime license directory. Style-Bert-VITS2 source and its AGPL license accompany the voice runtime. Character assets retain their original rights and are not included in the source repository.
+
+## 0.1.5 interaction update
+
+A short click opens a separate translucent chat window. Holding the character does not zoom or open chat; scrolling while holding it does not resize it. Move chat using its title bar and resize it using its edges, lower-right handle or −/＋ buttons. Move and resize the character independently with dragging, scrolling or its −/＋ controls. Place the lower body below the display edge to leave the upper body visible, then drag the visible character or its top handle back up. A visible region remains accessible so the character cannot be completely lost off-screen. Updates preserve settings, saves and imported voice models in the existing data directory.

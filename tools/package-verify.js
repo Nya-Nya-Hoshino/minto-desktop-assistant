@@ -98,6 +98,8 @@ async function verifyInstaller(root, output) {
   // NSIS may finish cleanup through its temporary child after the parent exits.
   const deadline = Date.now() + 30000;
   while (fs.existsSync(target) && Date.now() < deadline) await new Promise(resolve => setTimeout(resolve, 200));
+  // Windows can retain the empty working directory after NSIS removes all files.
+  if (fs.existsSync(target) && fs.readdirSync(target).length === 0) fs.rmdirSync(target);
   assert.ok(!fs.existsSync(target), 'Test installation directory was not removed');
   return { ...result, installationRemoved: true };
 }
@@ -111,5 +113,5 @@ async function main() {
   fs.writeFileSync(path.join(output, 'release-verification.json'), JSON.stringify(result, null, 2));
   console.log(JSON.stringify(result));
 }
-module.exports = { run, desktop, verifyPortable, verifyInstaller };
+module.exports = { run, desktop, verifyPortable, verifyInstaller, verifyOfflineVoice };
 if (require.main === module) main().catch(error => { console.error(error.message); process.exitCode = 1; });
