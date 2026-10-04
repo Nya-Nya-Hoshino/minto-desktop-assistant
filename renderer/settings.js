@@ -1,6 +1,6 @@
 'use strict';
 const api=window.minto,i18n=window.MintoI18n;let state,dirty=false,language='zh-CN';const clearKeys=new Set(),statusRecords=new Map();
-const groups={ui:['language','launch_at_login','font_family','font_size'],llm:['provider','api_base','model','reasoning_effort'],vision:['provider','api_base','model','reasoning_effort'],voice:['enabled','engine','api_base','model_id','speaker_name','style','length','style_weight'],observation:['enabled','display_id','interval_seconds','cooldown_seconds','capture_mode','region_x','region_y','region_width','region_height']};
+const groups={ui:['language','launch_at_login','font_family','font_size'],llm:['provider','api_base','model','reasoning_effort','multimodal'],vision:['provider','api_base','model','reasoning_effort'],voice:['enabled','engine','api_base','model_id','speaker_name','style','length','style_weight'],observation:['enabled','display_id','interval_seconds','cooldown_seconds','capture_mode','region_x','region_y','region_width','region_height']};
 const element=id=>document.getElementById(id),t=(source,values)=>i18n.translate(language,source,values);
 function status(id,source,values){statusRecords.set(id,{source,values});element(id).textContent=i18n.localizeError(language,t(source,values));}
 let voiceModels={};

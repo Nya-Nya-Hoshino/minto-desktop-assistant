@@ -2,6 +2,11 @@
 'use strict';
 // Keys are exact source strings. Technical model IDs, user content and Japanese character speech are never translated.
 const rows=[
+['主模型','メインモデル','Primary model'],['主模型支持图片等多模态输入','メインモデルは画像などのマルチモーダル入力に対応','Primary model supports images and multimodal input'],
+['勾选后，截图、提问和对话历史直接交给主模型。请根据模型实际能力选择。','選択すると、画像・質問・会話履歴をメインモデルへ直接送ります。実際の対応能力に合わせて選択してください。','When checked, screenshots, questions and conversation history go directly to the primary model. Select according to its actual capabilities.'],
+['备用视觉模型（可选）','予備の画像理解モデル（任意）','Backup vision model (optional)'],
+['主模型不支持图片，或图片请求被拒绝时使用。鉴权、限流和网络错误不会触发切换。','メインモデルが画像非対応、または画像入力が拒否された場合に使用します。認証・レート制限・通信エラーでは切り替えません。','Used when the primary model does not support images or its image input is rejected. Authentication, rate-limit and network failures do not trigger fallback.'],
+['请启用主模型多模态或配置备用视觉模型','メインモデルの画像入力を有効にするか、予備の画像モデルを設定してください','Enable multimodal input on the primary model or configure backup vision'],
 ['日语发音稿无效','日本語の読み上げ原稿が無効です','Invalid Japanese speech reading'],
 ['界面与启动','表示と起動','Appearance and startup'],['登录 Windows 时自动启动','Windows ログイン時に起動','Launch at Windows login'],['字体名称','フォント名','Font name'],['字号','文字サイズ','Font size'],
 ['请输入本机已安装的字体名称；缺失时使用系统备用字体。字号只调整界面文字。','この端末のフォント名を入力してください。未インストールなら代替フォントを使用します。文字サイズは UI のみ変更します。','Enter an installed font name. Missing fonts use a system fallback. Font size changes interface text only.'],

@@ -70,6 +70,20 @@ test('persona prompt fixes Japanese speech and separates screen evidence', () =>
   const prompt=buildPrompt('画面摘要');assert.ok(prompt.includes('ボク'));assert.ok(prompt.includes('マスター'));
   assert.ok(prompt.includes('日本語'));assert.ok(prompt.includes('画面摘要'));
 });
+test('vision reads the current question and preserves exact visible wording',async()=>{
+ const {describeScreen}=require('../services/assistant-service');let sent;
+ await describeScreen({api_base:'https://example.test/v1',model:'Exact_Vision'},'frame',{question:'现在屏幕中的薄荷说了什么',fetcher:async(_url,init)=>{sent=JSON.parse(init.body);return new Response(JSON.stringify({choices:[{message:{content:JSON.stringify({summary:'Mint: It is sunny today.',speak:false})}}]}));}});
+ const prompt=sent.messages[0].content[0].text;
+ assert.ok(prompt.includes('现在屏幕中的薄荷说了什么'));
+ assert.ok(prompt.includes('原文'));
+ assert.equal(sent.messages[0].content[1].image_url.url,'data:image/jpeg;base64,frame');
+});
+test('current observation travels with the current question after stale history',async()=>{
+ const seen=[];const fresh='Mint: It is sunny today.';
+ await requestReply({api_base:'https://example.test/v1',model:'Exact_Chat'},[{role:'assistant',content:'画面を直接見ることはできないのです。'}],'何と言っていますか？',null,{screenSummary:fresh,fetcher:async(_url,init)=>{const body=JSON.parse(init.body);seen.push(body);return new Response(JSON.stringify({choices:[{message:{content:JSON.stringify(seen.length===1?{text:'今日は晴れだと言っているのです。',emotion:'neutral',pose:'mPose0'}:{japanese:true})}}]}));}});
+ assert.ok(seen[0].messages.at(-1).content.includes(fresh));
+ assert.ok(seen[0].messages[0].content.includes('今回の観測'));
+});
 test('Japanese prose rejects a Chinese sentence despite a Japanese greeting and permits quoted user text',()=>{
  assert.throws(()=>parseReply(JSON.stringify({text:'こんにちは。今天心情很好呢あ。',emotion:'neutral',pose:'mPose0'})));
  assert.equal(parseReply(JSON.stringify({text:'マスターの「你好」は、中国語のあいさつなのです。',emotion:'neutral',pose:'mPose0'})).text,'マスターの「你好」は、中国語のあいさつなのです。');

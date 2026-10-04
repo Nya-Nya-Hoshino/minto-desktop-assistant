@@ -12,7 +12,7 @@ The source repository contains the application code and documentation. Copyright
 
 ## Run a local distribution
 
-For the installer edition, run `MintoAssistant-Setup-0.2.1-windows-x64.exe` and select an installation directory. Installation is for the current Windows user.
+For the installer edition, run `MintoAssistant-Setup-0.2.2-windows-x64.exe` and select an installation directory. Installation is for the current Windows user.
 
 For the portable edition, extract the complete ZIP into a writable directory and run `MintoAssistant.exe`. Keep `portable.flag`, `resources`, and all DLLs together with the executable. Portable user data is stored in its adjacent `data` directory.
 
@@ -24,13 +24,15 @@ In the interface settings, choose a local font and a size from 10 to 28. This ch
 
 ## Configure dialogue and vision
 
-Configure dialogue and vision separately with the provider, API base URL, exact model ID, and your API key. The application appends `/chat/completions` to the base URL. Use the provider's actual OpenAI-compatible endpoint; image input must be supported by the selected vision model. Provider choices include DeepSeek, OpenAI, Gemini, Grok, and a custom compatible service.
+Configure the primary model with the provider, API base URL, exact model ID, and your API key. A backup vision model is optional. The application appends `/chat/completions` to the base URL. Use the provider's actual OpenAI-compatible endpoint; image input must be supported by the selected vision model. Provider choices include DeepSeek, OpenAI, Gemini, Grok, and a custom compatible service.
 
 Use the connection test after saving. The locally verified DeepSeek configuration is base URL `https://api.deepseek.com`, model ID `deepseek-flash`, and reasoning effort `high`. This describes a tested configuration rather than a promise that a provider will keep a model indefinitely. API keys are encrypted with Windows storage; source and release packages do not include development credentials.
 
 Reply text is Japanese. The application validates the structured reply and its expression/pose mapping before displaying it. Invalid output or service failure is reported in the interface.
 
 ## Screen observation
+
+Configure one primary model and check **Primary model supports images and multimodal input** if it supports images. Screenshots, questions and recent history are sent together to the primary model. Backup vision is optional and collapsed by default. It is used when multimodal input is unchecked or the primary image request returns HTTP 400/415/422; the primary model then replies using that visual analysis. Authentication, rate-limit and network failures do not trigger fallback. Capture uses physical display resolution before cropping; current evidence takes precedence over old screen descriptions. Screenshots are not stored in saves.
 
 Choose the display in settings. A chat message can include the current screen, and the standalone screen action can describe it without typing a message. Periodic observation checks every 60 seconds by default. Proactive speech has a minimum interval of 120 seconds; it is skipped during another request, audio playback, screen lock, unchanged content, or when the vision result says there is nothing suitable to discuss. Pause observation from settings or the tray menu.
 

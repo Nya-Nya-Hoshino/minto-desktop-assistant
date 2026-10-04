@@ -1,7 +1,7 @@
 'use strict';
 const test=require('node:test');const assert=require('node:assert/strict');const fs=require('node:fs');const os=require('node:os');const path=require('node:path');const vm=require('node:vm');const http=require('node:http');const {EventEmitter}=require('node:events');const {createRequire}=require('node:module');const {pathToFileURL}=require('node:url');
 async function desktop(t,{lockGranted=true}={}){const root=fs.mkdtempSync(path.join(os.tmpdir(),'minto-integration-'));t.after(()=>fs.rmSync(root,{recursive:true,force:true}));const handlers=new Map(),windows=[],messages=[],openedPaths=[],popups=[],lockState={paths:[],attempts:0,quits:0};class Window extends EventEmitter{constructor(options){super();this.bounds={x:options.x||0,y:options.y||0,width:options.width,height:options.height};this.visible=options.show!==false;this.focusCount=0;this.webContents=new EventEmitter();this.webContents.send=(channel,value)=>messages.push({channel,value});this.webContents.isLoading=()=>false;this.webContents.setWindowOpenHandler=()=>{};this.webContents.session={setPermissionRequestHandler(){}};windows.push(this);}static fromWebContents(contents){return windows.find(window=>window.webContents===contents);}isDestroyed(){return false;}loadFile(){}setContentProtection(){}show(){this.visible=true;}hide(){this.visible=false;}showInactive(){this.visible=true;}focus(){this.focusCount++;}isVisible(){return this.visible;}getBounds(){return {...this.bounds};}getPosition(){return [this.bounds.x,this.bounds.y];}setPosition(x,y){Object.assign(this.bounds,{x,y});}setSize(width,height){Object.assign(this.bounds,{width,height});}setResizable(){}}
-const electron={app:Object.assign(new EventEmitter(),{isPackaged:false,whenReady:()=>Promise.resolve(),setPath(name,file){lockState.paths.push([name,file]);},requestSingleInstanceLock:()=>{lockState.attempts++;return lockGranted;},quit(){lockState.quits++;}}),net:{fetch},BrowserWindow:Window,ipcMain:Object.assign(new EventEmitter(),{handle:(channel,handler)=>handlers.set(channel,handler)}),Tray:class extends EventEmitter{setToolTip(){}setContextMenu(){}destroy(){}},Menu:{buildFromTemplate:items=>({items,popup:options=>popups.push({items,options})})},dialog:{},shell:{openPath:async file=>{openedPaths.push(file);return '';}},screen:{getPrimaryDisplay:()=>({id:41,label:'Actual primary display',workArea:{x:0,y:0,width:1920,height:1080}}),getAllDisplays:()=>[{id:41,label:'Actual primary display',bounds:{x:0,y:0,width:1920,height:1080},workArea:{x:0,y:0,width:1920,height:1080}}],getDisplayMatching:()=>({bounds:{x:0,y:0,width:1920,height:1080},workArea:{x:0,y:0,width:1920,height:1080}})},desktopCapturer:{getSources:async()=>[]},powerMonitor:new EventEmitter(),safeStorage:{isEncryptionAvailable:()=>true,encryptString:s=>Buffer.from([...s].reverse().join('')),decryptString:b=>[...b.toString()].reverse().join('')}};
+const electron={app:Object.assign(new EventEmitter(),{isPackaged:false,whenReady:()=>Promise.resolve(),setPath(name,file){lockState.paths.push([name,file]);},requestSingleInstanceLock:()=>{lockState.attempts++;return lockGranted;},quit(){lockState.quits++;}}),net:{fetch},BrowserWindow:Window,ipcMain:Object.assign(new EventEmitter(),{handle:(channel,handler)=>handlers.set(channel,handler)}),Tray:class extends EventEmitter{setToolTip(){}setContextMenu(){}destroy(){}},Menu:{buildFromTemplate:items=>({items,popup:options=>popups.push({items,options})})},dialog:{},shell:{openPath:async file=>{openedPaths.push(file);return '';}},screen:{getPrimaryDisplay:()=>({id:41,label:'Actual primary display',workArea:{x:0,y:0,width:1920,height:1080}}),getAllDisplays:()=>[{id:41,label:'Actual primary display',bounds:{x:0,y:0,width:1920,height:1080},scaleFactor:1,workArea:{x:0,y:0,width:1920,height:1080}}],getDisplayMatching:()=>({bounds:{x:0,y:0,width:1920,height:1080},scaleFactor:1,workArea:{x:0,y:0,width:1920,height:1080}})},desktopCapturer:{getSources:async()=>[]},powerMonitor:new EventEmitter(),safeStorage:{isEncryptionAvailable:()=>true,encryptString:s=>Buffer.from([...s].reverse().join('')),decryptString:b=>[...b.toString()].reverse().join('')}};
 const filename=path.join(__dirname,'../main.js'),realRequire=createRequire(filename);const context=vm.createContext({require:name=>name==='electron'?electron:name==='./services/voice-runtime'?{VoiceRuntime:class{start(){return Promise.resolve('http://127.0.0.1:5000');}config(value){return value;}stop(){}}}:realRequire(name),__dirname:path.dirname(filename),process:{argv:[],env:{MINTO_DATA_DIR:root}},console,Buffer,URL,AbortController,setTimeout,clearTimeout,setInterval:()=>1,clearInterval(){}});vm.runInContext(fs.readFileSync(filename,'utf8'),context);await new Promise(resolve=>setImmediate(resolve));const event={sender:windows[0]?.webContents,senderFrame:{url:pathToFileURL(path.join(path.dirname(filename),'renderer/index.html')).href}};return {call:(channel,data,sender=event)=>handlers.get('minto:'+channel)(sender,data),send:(channel,data)=>electron.ipcMain.emit('minto:'+channel,event,data),messages,context,electron,root,openedPaths,popups,windows,lockState};}
 test('every settings entry reopens hidden and minimized settings without creating duplicates',async t=>{
  const app=await desktop(t);await app.call('open-settings');const settings=app.windows[1];
@@ -78,6 +78,67 @@ test('region capture sends only mapped pixels and full-screen mode does not crop
  const app=await desktop(t),crops=[];app.electron.desktopCapturer.getSources=async()=>[{display_id:'41',thumbnail:{isEmpty:()=>false,getSize:()=>({width:1600,height:900}),crop:rect=>{crops.push(rect);return {toJPEG:()=>Buffer.from('cropped-frame')};},toJPEG:()=>Buffer.from('whole-frame')}}];
  await app.call('settings-save',{observation:{capture_mode:'region',region_x:.1,region_y:.2,region_width:.5,region_height:.4}});assert.equal((await vm.runInContext('capture()',app.context)).toString(),'cropped-frame');assert.equal(JSON.stringify(crops[0]),JSON.stringify({x:160,y:180,width:800,height:360}));
  await app.call('settings-save',{observation:{capture_mode:'screen'}});assert.equal((await vm.runInContext('capture()',app.context)).toString(),'whole-frame');assert.equal(crops.length,1);
+});
+test('capture requests physical display resolution before region cropping',async t=>{
+ const app=await desktop(t);let options,quality;
+ app.electron.screen.getAllDisplays=()=>[{id:41,bounds:{x:0,y:0,width:2560,height:1440},scaleFactor:1.25}];
+ app.electron.desktopCapturer.getSources=async input=>{options=input;return [{display_id:'41',thumbnail:{isEmpty:()=>false,toJPEG:value=>{quality=value;return Buffer.from('frame');}}}];};
+ await vm.runInContext('capture()',app.context);
+ assert.equal(JSON.stringify(options.thumbnailSize),JSON.stringify({width:3200,height:1800}));assert.equal(quality,90);
+});
+test('screen-enabled chat sends the user question to vision and current evidence to chat',async t=>{
+ const app=await desktop(t),seen=[];app.electron.net.fetch=async(_url,init)=>{
+  const body=JSON.parse(init.body);seen.push(body);const value=body.model==='Exact_Vision'?{summary:'Mint: It is sunny today.',speak:false}:body.messages[0].content.startsWith('公開本文の言語を検査します。')?{japanese:true}:{text:'今日は晴れだと言っているのです。',emotion:'neutral',pose:'mPose0'};
+  return {ok:true,json:async()=>({choices:[{message:{content:JSON.stringify(value)}}]})};
+ };
+ await app.call('settings-save',{llm:{api_base:'https://example.test/v1',model:'Exact_Chat'},vision:{api_base:'https://example.test/v1',model:'Exact_Vision'},voice:{enabled:false}});
+ app.electron.desktopCapturer.getSources=async()=>[{display_id:'41',thumbnail:{isEmpty:()=>false,toJPEG:()=>Buffer.from('frame')}}];
+ await vm.runInContext("reply('现在屏幕中的薄荷说了什么',{observe:true})",app.context);
+ assert.ok(seen[0].messages[0].content[0].text.includes('现在屏幕中的薄荷说了什么'));
+ assert.ok(seen[1].messages.at(-1).content.includes('Mint: It is sunny today.'));
+ assert.equal((await app.call('state')).save.messages.length,2);
+});
+test('multimodal primary sends screenshot and history without requiring backup vision',async t=>{
+ const app=await desktop(t),seen=[];
+ app.electron.net.fetch=async(_url,init)=>{const body=JSON.parse(init.body);seen.push(body);return {ok:true,json:async()=>({choices:[{message:{content:JSON.stringify(seen.length===1?{text:'表示は七百三十一なのです。',emotion:'neutral',pose:'mPose0'}:{japanese:true})}}]})};};
+ const config={provider:'DeepSeek',api_base:'https://example.test/v1',model:'deepseek-flash',api_key:'test',reasoning_effort:'high',multimodal:true};
+ await app.call('settings-save',{llm:config,voice:{enabled:false}});
+ app.electron.desktopCapturer.getSources=async()=>[{display_id:'41',thumbnail:{isEmpty:()=>false,toJPEG:()=>Buffer.from('cropped-frame')}}];
+ await vm.runInContext("saves.append('前の質問','ボクには画面が見えないのです。',{});reply('画面の数値は？',{observe:true})",app.context);
+ assert.equal(seen.length,2,'One multimodal reply plus Japanese validation, no separate vision summary');
+ const messages=seen[0].messages,content=messages.at(-1).content;
+ assert.ok(Array.isArray(content));assert.equal(content[1].image_url.url,'data:image/jpeg;base64,'+Buffer.from('cropped-frame').toString('base64'));
+ assert.ok(content[0].text.includes('画面の数値は？'));assert.equal(messages[2].content,'ボクには画面が見えないのです。');
+ assert.equal(messages[0].content.includes('今回は画面を観測していません。'),false);
+ assert.equal(JSON.stringify((await app.call('state')).save).includes(Buffer.from('cropped-frame').toString('base64')),false);
+});
+test('rejected primary image input uses backup vision then the primary for dialogue',async t=>{
+ const app=await desktop(t),seen=[];
+ app.electron.net.fetch=async(_url,init)=>{const body=JSON.parse(init.body),image=body.messages.some(message=>Array.isArray(message.content));seen.push({model:body.model,image,body});
+  if(body.model==='Primary'&&image)return {ok:false,status:400};
+  const value=body.model==='Backup'?{summary:'確認番号：731',speak:false}:body.messages[0].content.startsWith('公開本文の言語を検査します。')?{japanese:true}:{text:'番号は七百三十一なのです。',emotion:'neutral',pose:'mPose0'};
+  return {ok:true,json:async()=>({choices:[{message:{content:JSON.stringify(value)}}]})};
+ };
+ await app.call('settings-save',{llm:{api_base:'https://example.test/v1',model:'Primary',multimodal:true},vision:{api_base:'https://example.test/v1',model:'Backup'},voice:{enabled:false}});
+ app.electron.desktopCapturer.getSources=async()=>[{display_id:'41',thumbnail:{isEmpty:()=>false,toJPEG:()=>Buffer.from('frame')}}];
+ await vm.runInContext("reply('画面の番号は？',{observe:true})",app.context);
+ assert.deepEqual(seen.map(value=>[value.model,value.image]),[['Primary',true],['Backup',true],['Primary',false],['Primary',false]]);
+ assert.ok(seen[1].body.messages[0].content[0].text.includes('画面の番号は？'));
+ assert.equal((await app.call('state')).save.messages.length,2);
+});
+test('authentication failure on primary image input does not fall back to vision',async t=>{
+ const app=await desktop(t),seen=[];app.electron.net.fetch=async(_url,init)=>{seen.push(JSON.parse(init.body).model);return {ok:false,status:401};};
+ await app.call('settings-save',{llm:{api_base:'https://example.test/v1',model:'Primary',multimodal:true},vision:{api_base:'https://example.test/v1',model:'Backup'},voice:{enabled:false}});
+ app.electron.desktopCapturer.getSources=async()=>[{display_id:'41',thumbnail:{isEmpty:()=>false,toJPEG:()=>Buffer.from('frame')}}];
+ await vm.runInContext("reply('今の画面は？',{observe:true})",app.context);
+ assert.deepEqual(seen,['Primary']);assert.equal((await app.call('state')).save.messages.length,0);
+ assert.ok(app.messages.some(item=>item.channel==='minto:reply'&&item.value.detail==='LLM HTTP 401'));
+});
+test('periodic observation uses the multimodal primary without backup configuration',async t=>{
+ const app=await desktop(t),seen=[];app.electron.net.fetch=async(_url,init)=>{const body=JSON.parse(init.body);seen.push(body.model);return {ok:true,json:async()=>({choices:[{message:{content:JSON.stringify({summary:'画面には文書が表示されています。',speak:false})}}]})};};
+ await app.call('settings-save',{llm:{api_base:'https://example.test/v1',model:'Primary',multimodal:true},voice:{enabled:false}});
+ app.electron.desktopCapturer.getSources=async()=>[{display_id:'41',thumbnail:{isEmpty:()=>false,toJPEG:()=>Buffer.from('frame')}}];
+ await vm.runInContext('observe()',app.context);assert.deepEqual(seen,['Primary']);assert.equal((await app.call('state')).busy,false);
 });
 test('startup preference controls the packaged executable and rejects enabling a development launch',async t=>{
  const app=await desktop(t),calls=[];app.electron.app.setLoginItemSettings=value=>calls.push(value);
