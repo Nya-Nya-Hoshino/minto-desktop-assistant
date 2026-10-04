@@ -12,13 +12,15 @@ The source repository contains the application code and documentation. Copyright
 
 ## Run a local distribution
 
-For the installer edition, run `MintoAssistant-Setup-0.1.5-windows-x64.exe` and select an installation directory. Installation is for the current Windows user.
+For the installer edition, run `MintoAssistant-Setup-0.2.0-windows-x64.exe` and select an installation directory. Installation is for the current Windows user.
 
 For the portable edition, extract the complete ZIP into a writable directory and run `MintoAssistant.exe`. Keep `portable.flag`, `resources`, and all DLLs together with the executable. Portable user data is stored in its adjacent `data` directory.
 
 Click the character to open the translucent chat bubble and input box. Drag the character to move it; use the mouse wheel to resize it. Gaze follows the desktop mouse pointer, including positions outside the character window. Existing model motions provide expressions, poses, hand movement, and ear movement; generated audio drives lip synchronization.
 
 Right-click the character or tray icon for the menu. Double-click the tray icon to open settings. Choose the interface language in settings: Chinese, English, or Japanese. The interface language does not change the character's Japanese dialogue and speech; Chinese input is supported.
+
+In the interface settings, choose a local font and a size from 10 to 28. This changes interface text without scaling the character. Enable startup at Windows login if desired; it is off by default and available in packaged editions. Keep a portable installation at the same path after enabling startup.
 
 ## Configure dialogue and vision
 
@@ -34,9 +36,13 @@ Choose the display in settings. A chat message can include the current screen, a
 
 Screenshots are sent to the configured vision provider for the current request. Conversation saves retain observation summaries and timestamps, not screenshot files.
 
+Select **Entire display** or **Selected region** in settings. Choose the display, click **Select region**, and drag a rectangle; release to save it. Esc or right-click cancels without changing the saved display or region. The chat region button selects a rectangle and then observes it. Manual actions, attached screenshots, vision connection tests and periodic observation all use the same saved scope. The selector pauses periodic capture while open.
+
 ## Voice models
 
 A complete local distribution starts and stops its bundled CPU speech service automatically. An external Style-Bert-VITS2 service can also be selected using its actual HTTP base URL.
+
+English names remain visible in dialogue and saves. When a reply contains Latin letters, the configured dialogue service produces a separate Japanese katakana reading for speech; this adds one service request. Pure Japanese replies go directly to local synthesis. A rejected reading is reported instead of sending English spelling to the Japanese voice model.
 
 To use your own model, import a folder containing exactly one `.safetensors` checkpoint, `config.json`, and `style_vectors.npy`. The files are copied into the application data directory; the source folder is preserved. Select the speaker and style from the metadata the model actually supplies. The existing Mint checkpoint supplies speaker `ミント` and style `Neutral`.
 
@@ -85,6 +91,6 @@ For the installer edition, run the rebuilt installer as the same Windows user an
 
 The inherited Apache-2.0 `LICENSE` and `NOTICE` are retained. Component notices are in `THIRD_PARTY_NOTICES.md` in a distribution and the runtime license directory. Style-Bert-VITS2 source and its AGPL license accompany the voice runtime. Character assets retain their original rights and are not included in the source repository.
 
-## 0.1.5 interaction update
+## 0.2.0 interaction update
 
 A short click opens a separate translucent chat window. Holding the character does not zoom or open chat; scrolling while holding it does not resize it. Move chat using its title bar and resize it using its edges, lower-right handle or −/＋ buttons. Move and resize the character independently with dragging, scrolling or its −/＋ controls. Place the lower body below the display edge to leave the upper body visible, then drag the visible character or its top handle back up. A visible region remains accessible so the character cannot be completely lost off-screen. Updates preserve settings, saves and imported voice models in the existing data directory.

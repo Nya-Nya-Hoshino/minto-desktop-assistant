@@ -2,6 +2,9 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const {SettingsStore}=require('../services/settings-store');
 const secure={isEncryptionAvailable:()=>true,encryptString:s=>Buffer.from(s),decryptString:b=>b.toString()};
+test('startup, typography and region controls and errors are translated into all three UI languages',()=>{
+ const i18n=require('../i18n');for(const text of ['界面与启动','登录 Windows 时自动启动','字体名称','字号','观察范围','整个屏幕','框选区域','鼠标框选','拖动鼠标框选，松开保存；Esc 或右键取消','观察区域无效，请重新框选','字体名称无效','字号须在 10 到 28 之间','开机自启仅支持打包后的应用'])for(const language of ['ja','en'])assert.notEqual(i18n.translate(language,text),text,text);
+});
 test('UI language defaults to Chinese, persists independently, and rejects undeclared locale values',t=>{
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'minto-language-'));t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
  const store=new SettingsStore(root,secure);assert.equal(store.public().ui?.language,'zh-CN');

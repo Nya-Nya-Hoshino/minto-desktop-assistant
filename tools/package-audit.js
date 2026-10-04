@@ -63,6 +63,7 @@ function auditUnpacked(root, portable) {
   }
   assert.ok(entries.includes('/assets/minto/Minto_Tuujou/Minto_Tuujou.model3.json'));
   assert.ok(entries.includes('/assets/minto/minto_Pajama/minto_Pajama.model3.json'));
+  for(const file of ['renderer/appearance.js','renderer/region.html','renderer/region.js','services/screen-region.js','services/region-selector.js','services/speech-reading.js'])assert.ok(entries.includes('/'+file),'Missing interaction resource: '+file);
   const totalBytes = paths.reduce((sum, file) => sum + fs.statSync(path.join(root, file)).size, 0);
   console.log(JSON.stringify({ event: 'package-audit', portable, files: paths.length, bytes: totalBytes }));
   return { portable, files: paths.length, bytes: totalBytes };

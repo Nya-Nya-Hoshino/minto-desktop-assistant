@@ -3,6 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const assert = require('node:assert/strict');
 const { spawn } = require('node:child_process');
+const { createHash } = require('node:crypto');
 const { randomUUID } = require('node:crypto');
 const { path7za } = require('7zip-bin');
 const { SaveStore } = require('../services/save-store');
@@ -41,12 +42,19 @@ async function desktop(executable, output, singleInstanceData) {
   const settings = JSON.parse(fs.readFileSync(path.join(output, 'settings-dom.json'), 'utf8'));
   return { checks: results.results.length, dataRoot: settings.dataRoot, saveId: results.state.saveId, ...(secondLaunchGuarded === undefined ? {} : { secondLaunchGuarded }) };
 }
+function verifyDocuments(root, target) {
+  const sha=file=>createHash('sha256').update(fs.readFileSync(file)).digest('hex');
+  for (const relative of ['README.md','README.en.md','README.ja.md','docs/TRAINING.en.md','docs/TRAINING.ja.md']) {
+    assert.equal(sha(path.join(target,relative)),sha(path.join(root,relative)), 'Packaged document differs: '+relative);
+  }
+}
 async function verifyPortable(root, output) {
   const manifest = require(path.join(root, 'package.json'));
   const archive = path.join(root, 'dist', 'MintoAssistant-' + manifest.version + '-windows-x64.zip');
   const target = path.join(output, 'portable');
   await run(path7za, ['x', archive, '-o' + target, '-y']);
   auditUnpacked(target, true);
+  verifyDocuments(root, target);
   const executable = path.join(target, 'MintoAssistant.exe');
   const first = await desktop(executable, path.join(output, 'portable-first'), path.join(target, 'data'));
   assert.equal(first.dataRoot, path.join(target, 'data'));
@@ -87,6 +95,7 @@ async function verifyInstaller(root, output) {
   const target = path.join(output, 'installed');
   await run(installer, ['/S', '/currentuser', '/D=' + target]);
   auditUnpacked(target, false);
+  verifyDocuments(root, target);
   const executable = path.join(target, 'MintoAssistant.exe');
   const result = await desktop(executable, path.join(output, 'installer-launch'));
   assert.notEqual(result.dataRoot, path.join(target, 'data'));

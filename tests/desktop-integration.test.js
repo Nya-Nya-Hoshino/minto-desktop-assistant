@@ -61,3 +61,32 @@ test('a loading chat receives pet errors after its page is ready',async t=>{
  assert.equal(app.messages.some(item=>item.channel==='minto:reply'),false);
  app.windows[1].webContents.emit('did-finish-load');assert.ok(app.messages.some(item=>item.channel==='minto:reply'));
 });
+
+test('region capture sends only mapped pixels and full-screen mode does not crop',async t=>{
+ const app=await desktop(t),crops=[];app.electron.desktopCapturer.getSources=async()=>[{display_id:'41',thumbnail:{isEmpty:()=>false,getSize:()=>({width:1600,height:900}),crop:rect=>{crops.push(rect);return {toJPEG:()=>Buffer.from('cropped-frame')};},toJPEG:()=>Buffer.from('whole-frame')}}];
+ await app.call('settings-save',{observation:{capture_mode:'region',region_x:.1,region_y:.2,region_width:.5,region_height:.4}});assert.equal((await vm.runInContext('capture()',app.context)).toString(),'cropped-frame');assert.equal(JSON.stringify(crops[0]),JSON.stringify({x:160,y:180,width:800,height:360}));
+ await app.call('settings-save',{observation:{capture_mode:'screen'}});assert.equal((await vm.runInContext('capture()',app.context)).toString(),'whole-frame');assert.equal(crops.length,1);
+});
+test('startup preference controls the packaged executable and rejects enabling a development launch',async t=>{
+ const app=await desktop(t),calls=[];app.electron.app.setLoginItemSettings=value=>calls.push(value);
+ await assert.rejects(()=>app.call('settings-save',{ui:{launch_at_login:true}}));assert.equal((await app.call('state')).settings.ui.launch_at_login,false);
+ app.electron.app.isPackaged=true;await app.call('settings-save',{ui:{launch_at_login:true}});assert.equal(calls.at(-1).openAtLogin,true);assert.equal(calls.at(-1).args.length,0);
+ await app.call('settings-save',{ui:{launch_at_login:false}});assert.equal(calls.at(-1).openAtLogin,false);
+});
+test('automatic observation pauses while region selection is active',async t=>{
+ const app=await desktop(t);let captures=0;app.electron.desktopCapturer.getSources=async()=>{captures++;return [];};vm.runInContext("settings.update({llm:{api_base:'http://127.0.0.1:1',model:'Exact'},vision:{api_base:'http://127.0.0.1:1',model:'Exact'}});regionSelector={active:true}",app.context);await vm.runInContext('observe()',app.context);assert.equal(captures,0);
+});
+test('selecting another display commits its region only after successful selection',async t=>{
+ const app=await desktop(t),before=(await app.call('state')).settings.observation;
+ app.electron.screen.getAllDisplays=()=>[{id:41},{id:82}];app.context.selectedDisplays=[];
+ vm.runInContext("regionSelector={select:async display=>{selectedDisplays.push(display.id);return {cancelled:true}}}",app.context);
+ assert.equal((await app.call('region-select',{display_id:'82'})).cancelled,true);
+ assert.equal(JSON.stringify((await app.call('state')).settings.observation),JSON.stringify(before));assert.deepEqual(app.context.selectedDisplays,[82]);
+ vm.runInContext("regionSelector={select:async display=>({cancelled:false,observation:{display_id:String(display.id),capture_mode:'region',region_x:.1,region_y:.2,region_width:.3,region_height:.4}})}",app.context);
+ const result=await app.call('region-select',{display_id:'82'});assert.equal(result.observation.display_id,'82');assert.equal(result.observation.region_width,.3);
+ for(const payload of [{display_id:82},{display_id:'82',extra:true},null])await assert.rejects(()=>app.call('region-select',payload));
+});
+test('desktop synthesis sends separate kana reading while retaining original chat text',async t=>{
+ const app=await desktop(t);app.electron.net.fetch=async()=>({ok:true,json:async()=>({choices:[{message:{content:JSON.stringify({speech_text:'オープンエーアイを使うのです。'})}}]})});await app.call('settings-save',{llm:{api_base:'https://example.test/v1',model:'Exact_Model'}});app.context.spoken=[];
+ await vm.runInContext("active={controller:new AbortController()};voiceService={synthesize:async text=>{spoken.push(text);return Buffer.from('audio')}};synthesize('OpenAIを使うのです。',active)",app.context);assert.deepEqual(app.context.spoken,['オープンエーアイを使うのです。']);assert.equal((await app.call('state')).save.messages.length,0);
+});

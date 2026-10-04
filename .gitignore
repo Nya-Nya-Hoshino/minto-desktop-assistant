@@ -19,6 +19,12 @@ release-verification/
 voice/venv/
 voice/Style-Bert-VITS2/
 voice/MintoCorpus/
+voice/MintoCorpusV020/
+voice/training-run-020/
+voice/evaluation/v020/
+verification-020/
+analysis/
+.learnings/
 voice/evaluation/*.wav
 voice/evaluation/*.json
 **/__pycache__/

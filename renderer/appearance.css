@@ -1,0 +1,11 @@
+:root{--minto-ui-scale:1;--minto-font-family:"Microsoft YaHei","Yu Gothic",sans-serif}
+body,button,input,select,textarea{font-family:var(--minto-font-family)!important}
+body{font-size:calc(14px * var(--minto-ui-scale))}
+h1{font-size:calc(20px * var(--minto-ui-scale))}h2{font-size:calc(16px * var(--minto-ui-scale))}
+p,label,button,.status,#save-info{font-size:calc(12px * var(--minto-ui-scale))}
+input,select,textarea,.message{font-size:calc(13px * var(--minto-ui-scale))}
+.message small{font-size:calc(10px * var(--minto-ui-scale))}
+.hint,.badge,#chat-status,.tools,#drag-handle{font-size:calc(11px * var(--minto-ui-scale))}
+#chat-input,#send-button,#cancel-button,#mini-controls button{font-size:calc(12px * var(--minto-ui-scale))}
+header button{font-size:calc(22px * var(--minto-ui-scale))}
+#hint{font-size:calc(14px * var(--minto-ui-scale))}

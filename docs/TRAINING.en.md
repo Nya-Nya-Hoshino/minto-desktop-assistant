@@ -4,7 +4,33 @@
 
 This guide describes the already prepared personal workspace at `D:\Desktop_Minto`. The source repository does not include its game audio, trained character weights, training virtual environment, or prepared dataset. Preserve those local files when updating application source. For a new dataset, use audio you are authorized to use and pair each clip with its exact transcript; do not infer transcripts from filenames.
 
-## Current training state
+## 0.2.0 joint-corpus workflow
+
+The isolated joint corpus is `voice\MintoCorpusV020`: 967 training clips and 86 validation clips, totaling 79:58.648. All 52 previous validation clips remain held out. Training inputs and optimizer states are under `voice\Style-Bert-VITS2\Data\MintoV020`; inference outputs are under `voice\Style-Bert-VITS2\model_assets\MintoV020`. The original `Data\Minto` and its model outputs remain intact.
+
+The 0.2.0 run resumed the original epoch-10 / step-9,960 optimizer state and completed five full traversals (epochs 10–14), ending at step 14,795. Its final inference file is `MintoV020_e14_s14795.safetensors`; final resumable states are `models\G_14795.pth`, `D_14795.pth`, and `WD_14795.pth`. The completed configuration has `train.epochs: 14`. The original inference weights, optimizer states and configuration were verified unchanged after this run.
+
+The bundled 0.2.0 voice uses `MintoV020_e14_s14000.safetensors`: among the epoch-14 outputs it had the highest mean speaker-embedding cosine on six fixed holdouts (0.675229; old voice 0.636254; final step 14,795 voice 0.597477). All 120 outputs across the old voice and 11 new checkpoints passed signal checks. These small-sample scores do not prove improved pronunciation, prosody or laughter naturalness. The final step-14,795 states remain the resumption point; the deployed inference choice does not change them.
+
+Back up the actual current `.pth` files and `config.json` before extending this run. Set `train.epochs` in `Data\MintoV020\config.json` to a larger **total** target, then run:
+
+```powershell
+Set-Location -LiteralPath 'D:\Desktop_Minto'
+& '.\voice\train_minto_020.ps1' -Action Validate
+& '.\voice\train_minto_020.ps1' -Action Train
+```
+
+The wrapper uses the isolated `voice\training-run-020` working directory. Its own `config.yml` and `configs\paths.yml` point to the new dataset/assets, so the official trainer's configuration-copy behavior does not overwrite the old JSON. The WavLM path in the training JSON is absolute. Keep this working directory with the local training workspace. The default action is validation; a saved epoch can be traversed again on resume.
+
+It invokes the official trainer through `train_020.py` with `--not_use_custom_batch_sampler`: the older default bucket sampler skips very short or long clips. Validation confirms that the length-grouped sampler visits all 967 indices. `training_collate_020.py` pads only short batch tensors to the fixed segment length, preserving source WAVs and true audio/text lengths; this prevents fixed segment slices from exceeding the shortest utterance. Keep this wrapper when resuming the joint corpus.
+
+`prepare_training_020.py` exposes explicit `resample`, `text`, `bert`, `styles`, and `validate` stages. Run it with the existing CUDA Python from the workspace, for example `& '.\voice\venv\Scripts\python.exe' '.\voice\prepare_training_020.py' validate`. WAV resampling keeps leading/trailing audio and does not trim or normalize it. The text stage preserves the audited split; default upstream preprocessing would re-split it. `bootstrap`, `all`, and `checkpoints` refuse to overwrite an existing new run. The Japanese worker is started from the upstream package directory before restoring the isolated configuration directory.
+
+After training, run `voice\evaluation\evaluate_020.py` with the same CUDA Python. It compares the original deployed voice with every actual new inference checkpoint, using seed 42 and the same held-out/new sentences. Local listening WAVs and `comparison.json` go under `voice\evaluation\v020`. Signal checks and speaker embeddings cannot establish naturalness or correct intonation; listen to these samples before choosing your own checkpoint. For deployment, copy exactly one selected weight, its configuration and its training-only Neutral vector into a separate import folder. The application reads English names as Japanese katakana while preserving their display text; this does not provide native English speech.
+
+The corpus, working directory, optimizer states, private comparison report and generated WAVs stay local and are excluded from the public source repository.
+
+## Preserved 0.1.x training state
 
 The selected corpus contains 997 training clips and 52 disjoint held-out clips, totaling 79:59.829. Training completed 10 epochs and 9,960 steps using JP-Extra, batch size 1, fp16. The trained model provides speaker `ミント` and style `Neutral`. The Neutral vector averages only the training clips.
 
