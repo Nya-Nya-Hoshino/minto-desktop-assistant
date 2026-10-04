@@ -12,7 +12,7 @@ Windows x64 用のデスクトップアシスタントです。2 種類の Live2
 
 ## ローカル配布物を起動する
 
-インストーラー版は `MintoAssistant-Setup-0.2.0-windows-x64.exe` を実行し、保存先を選びます。現在の Windows ユーザー向けにインストールします。
+インストーラー版は `MintoAssistant-Setup-0.2.1-windows-x64.exe` を実行し、保存先を選びます。現在の Windows ユーザー向けにインストールします。
 
 ポータブル版は ZIP 全体を書き込み可能なフォルダーに展開し、`MintoAssistant.exe` を実行します。`portable.flag`、`resources`、すべての DLL を同じ構成のまま保持してください。ユーザーデータは EXE の隣の `data` フォルダーに保存されます。
 

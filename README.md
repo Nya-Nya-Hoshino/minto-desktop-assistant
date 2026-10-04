@@ -12,7 +12,7 @@ The source repository contains the application code and documentation. Copyright
 
 ## Run a local distribution
 
-For the installer edition, run `MintoAssistant-Setup-0.2.0-windows-x64.exe` and select an installation directory. Installation is for the current Windows user.
+For the installer edition, run `MintoAssistant-Setup-0.2.1-windows-x64.exe` and select an installation directory. Installation is for the current Windows user.
 
 For the portable edition, extract the complete ZIP into a writable directory and run `MintoAssistant.exe`. Keep `portable.flag`, `resources`, and all DLLs together with the executable. Portable user data is stored in its adjacent `data` directory.
 

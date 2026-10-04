@@ -16,7 +16,7 @@ function errorText(error){return error.name==='AbortError'?t('已取消'):i18n.l
 function authorized(event,petOnly=false){const window=BrowserWindow.fromWebContents(event.sender);const allowed=petOnly==='pet'?[petWindow]:petOnly?[petWindow,chatWindow]:[petWindow,chatWindow,settingsWindow];if(!window||!allowed.includes(window))throw new Error(t('来源窗口无效'));const expected=pathToFileURL(path.join(__dirname,'renderer',window===petWindow?'index.html':window===chatWindow?'chat.html':'settings.html')).href;if(event.senderFrame.url!==expected)throw new Error(t('来源页面无效'));}
 function handle(channel,handler,petOnly=false){ipcMain.handle(channel,async(event,data)=>{authorized(event,petOnly);try{return await handler(data,event);}catch(error){throw new Error(errorText(error));}});}
 function secureWindow(window){window.webContents.setWindowOpenHandler(()=>({action:'deny'}));window.webContents.on('will-navigate',event=>event.preventDefault());window.webContents.session.setPermissionRequestHandler((_contents,_permission,callback)=>callback(false));}
-function openSettings(){if(settingsWindow&&!settingsWindow.isDestroyed()){settingsWindow.focus();return;}settingsWindow=new BrowserWindow({width:820,height:860,minWidth:660,minHeight:580,title:t('Minto Assistant · 设置'),autoHideMenuBar:true,webPreferences:{preload:path.join(__dirname,'preload.js'),contextIsolation:true,nodeIntegration:false,sandbox:true}});secureWindow(settingsWindow);settingsWindow.loadFile(path.join(__dirname,'renderer/settings.html'));settingsWindow.on('closed',()=>{settingsWindow=null;});}
+function openSettings(){if(settingsWindow&&!settingsWindow.isDestroyed()){if(settingsWindow.isMinimized())settingsWindow.restore();settingsWindow.show();settingsWindow.focus();return;}settingsWindow=new BrowserWindow({width:820,height:860,minWidth:660,minHeight:580,title:t('Minto Assistant · 设置'),autoHideMenuBar:true,webPreferences:{preload:path.join(__dirname,'preload.js'),contextIsolation:true,nodeIntegration:false,sandbox:true}});secureWindow(settingsWindow);settingsWindow.loadFile(path.join(__dirname,'renderer/settings.html'));settingsWindow.on('closed',()=>{settingsWindow=null;});}
 function toggleChat(visible,focus=true){
  if(!chatWindow||chatWindow.isDestroyed()){
   const pet=petWindow.getBounds(),area=screen.getDisplayMatching(pet).workArea;
@@ -179,6 +179,11 @@ async function verification() {
     openSettings();
     await new Promise(resolve => settingsWindow.webContents.once('did-finish-load', resolve));
     await delay(500);
+    const settingsId=settingsWindow.id;
+    settingsWindow.minimize();await delay(200);openSettings();await delay(200);
+    results.push({name:'settings-window-restored',passed:settingsWindow.id===settingsId&&!settingsWindow.isMinimized()&&settingsWindow.isVisible()});
+    settingsWindow.hide();openSettings();await delay(100);
+    results.push({name:'settings-window-shown',passed:settingsWindow.id===settingsId&&settingsWindow.isVisible()});
     const verificationObservation=structuredClone(settings.value.observation);
     settings.update({observation:{display_id:String(screen.getPrimaryDisplay().id)}});broadcast();
     await settingsWindow.webContents.executeJavaScript("document.getElementById('voice-refresh').onclick()");
