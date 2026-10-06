@@ -29,6 +29,11 @@ function stateRender(value){
  element('save-list').replaceChildren(...value.saves.map(save=>{const option=document.createElement('option');option.value=save.id;option.textContent=save.name+(save.active?t(' · 当前'):'');return option;}));element('save-list').value=value.saves.some(save=>save.id===selected)?selected:value.save.id;
  saveDetail(!previous||previous.save.id!==value.save.id||previous.save.updatedAt!==value.save.updatedAt);
  element('skin-list').replaceChildren(...value.skins.map(skin=>{const option=document.createElement('option');option.value=skin.id;option.textContent=t(skin.label);return option;}));element('skin-list').value=value.save.skin;
+ status('relationship-status','好感 {score}/100 · {stage}',{score:value.save.relationship.score,stage:t(value.relationshipStage)});
+ element('observation-status').textContent=t('观察状态：')+value.observation.status;
+ const time=date=>date?new Date(date).toLocaleTimeString(language):t('尚无记录');
+ status('observation-times','上次观察 {attempt} · 上次主动搭话 {spoken}',{attempt:time(value.observation.lastAttemptAt),spoken:time(value.observation.lastSpokenAt)});
+ element('observation-error').textContent=value.observation.detail||'';
  status('voice-runtime-status','运行状态：{status}',{status:value.voiceStatus});element('pause-observation').textContent=t(value.paused?'恢复主动观察':'暂停主动观察');
 }
 function saveDetail(refreshFields=true){if(!state)return;const selected=state.saves.find(save=>save.id===element('save-list').value);if(refreshFields)element('save-name').value=selected?.name||'';if(selected?.id===state.save.id){if(refreshFields)element('save-summary').value=state.save.summary;status('save-info','完整对话 {count} 条 · 更新于 {date}',{count:state.save.messages.length,date:state.save.updatedAt});}else{if(refreshFields)element('save-summary').value='';status('save-info','切换后查看此存档的对话数量和摘要。');}}

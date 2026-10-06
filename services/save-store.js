@@ -2,9 +2,10 @@
 const fs=require('node:fs');
 const path=require('node:path');
 const {randomUUID}=require('node:crypto');
+const {initialRelationship,validateRelationship,applyRelationship}=require('./relationship-service');
 function checkedMetadata(value){
  if(!value||Array.isArray(value)||typeof value!=='object')throw new Error('存档消息附加信息损坏');
- const rules={emotion:v=>typeof v==='string'&&v.length<=80,pose:v=>typeof v==='string'&&v.length<=80,proactive:v=>typeof v==='boolean',screenSummary:v=>typeof v==='string'&&v.length<=6000,observedAt:v=>v===null||(typeof v==='string'&&Number.isFinite(Date.parse(v))),display_id:v=>v===null||(typeof v==='string'&&v.length<=200)};
+ const rules={emotion:v=>typeof v==='string'&&v.length<=80,pose:v=>typeof v==='string'&&v.length<=80,proactive:v=>typeof v==='boolean',screenSummary:v=>typeof v==='string'&&v.length<=6000,observedAt:v=>v===null||(typeof v==='string'&&Number.isFinite(Date.parse(v))),display_id:v=>v===null||(typeof v==='string'&&v.length<=200),affectionDelta:v=>Number.isInteger(v)&&v>=-3&&v<=1,affectionSignal:v=>['neutral','care','repair','hostility','pressure'].includes(v)};
  for(const [key,item]of Object.entries(value))if(!Object.hasOwn(rules,key)||!rules[key](item))throw new Error('存档消息附加信息损坏');
  return structuredClone(value);
 }
@@ -19,25 +20,26 @@ class SaveStore {
   file(id){if(!this.index.slots.some(x=>x.id===id))throw new Error('存档不存在');return path.join(this.root,id+'.json');}
   list(){return this.index.slots.map(x=>({...x,active:x.id===this.index.active}));}
   persistIndex(){atomicWrite(this.indexPath,this.index);}
-  create(name){const now=new Date().toISOString();const save={version:1,id:randomUUID(),name:String(name||'新存档').slice(0,80),createdAt:now,updatedAt:now,skin:'Minto_Tuujou',summary:'',messages:[]};
+  create(name){const now=new Date().toISOString();const save={version:1,id:randomUUID(),name:String(name||'新存档').slice(0,80),createdAt:now,updatedAt:now,skin:'Minto_Tuujou',summary:'',messages:[],relationship:initialRelationship()};
     atomicWrite(path.join(this.root,save.id+'.json'),save);this.index.slots.push({id:save.id,name:save.name,updatedAt:now});this.index.active=save.id;this.persistIndex();return save;
   }
-  read(id){const save=JSON.parse(fs.readFileSync(this.file(id),'utf8'));this.validate(save);return save;}
+  read(id){const save=JSON.parse(fs.readFileSync(this.file(id),'utf8'));this.validate(save);save.relationship=save.relationship===undefined?initialRelationship():validateRelationship(save.relationship);return save;}
   current(){return this.read(this.index.active);}
   select(id){this.read(id);this.index.active=id;this.persistIndex();return this.current();}
   write(save){atomicWrite(this.file(save.id),save);const slot=this.index.slots.find(x=>x.id===save.id);slot.name=save.name;slot.updatedAt=save.updatedAt;this.persistIndex();return save;}
-  append(user,assistant,metadata={}){const s=this.current();const at=new Date().toISOString();s.messages.push({role:'user',content:String(user),at},{role:'assistant',content:String(assistant),at,metadata});s.updatedAt=at;return this.write(s);}
+  append(user,assistant,metadata={},assessment){const s=this.current();const at=new Date().toISOString();const change=applyRelationship(s.relationship,String(user),assessment,{proactive:metadata.proactive===true,at});s.relationship=change.relationship;const checked=checkedMetadata(metadata);if(assessment){checked.affectionDelta=change.delta;checked.affectionSignal=change.signal;}s.messages.push({role:'user',content:String(user),at},{role:'assistant',content:String(assistant),at,metadata:checked});s.updatedAt=at;return this.write(s);}
   updateState(data){const s=this.current();if(typeof data.skin==='string')s.skin=data.skin;if(typeof data.summary==='string')s.summary=data.summary;s.updatedAt=new Date().toISOString();return this.write(s);}
   context(rounds=10){return this.current().messages.slice(-Math.max(1,Math.min(100,rounds))*2).map(({role,content})=>({role,content}));}
   rename(id,name){const s=this.read(id);s.name=String(name).trim().slice(0,80);if(!s.name)throw new Error('名称不能为空');s.updatedAt=new Date().toISOString();return this.write(s);}
   remove(id){const file=this.file(id);this.index.slots=this.index.slots.filter(s=>s.id!==id);if(!this.index.slots.length)this.create('新しいセーブ');else if(this.index.active===id)this.index.active=this.index.slots[0].id;this.persistIndex();fs.unlinkSync(file);return this.current();}
   export(id=this.index.active){return JSON.stringify(this.read(id),null,2);}
   validate(s){if(!s||s.version!==1||typeof s.name!=='string'||!Array.isArray(s.messages)||s.messages.length>200000)throw new Error('不支持的存档格式');
+    if(s.relationship!==undefined)validateRelationship(s.relationship);
     for(const m of s.messages){if(!m||!['user','assistant'].includes(m.role)||typeof m.content!=='string'||m.content.length>100000)throw new Error('存档对话数据损坏');if(m.metadata!==undefined)checkedMetadata(m.metadata);}
   }
   import(data){if(typeof data!=='string'||Buffer.byteLength(data)>100*1024*1024)throw new Error('存档过大');const input=JSON.parse(data);this.validate(input);
     const s=this.create(input.name+'（导入）');s.messages=input.messages.map(m=>({role:m.role,content:m.content,at:typeof m.at==='string'?m.at:s.createdAt,...(m.metadata===undefined?{}:{metadata:checkedMetadata(m.metadata)})}));
-    s.summary=typeof input.summary==='string'?input.summary:'';if(['Minto_Tuujou','minto_Pajama'].includes(input.skin))s.skin=input.skin;return this.write(s);
+    s.summary=typeof input.summary==='string'?input.summary:'';s.relationship=input.relationship===undefined?initialRelationship():validateRelationship(input.relationship);if(['Minto_Tuujou','minto_Pajama'].includes(input.skin))s.skin=input.skin;return this.write(s);
   }
 }
 module.exports={SaveStore,atomicWrite};

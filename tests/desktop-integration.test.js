@@ -135,10 +135,10 @@ test('authentication failure on primary image input does not fall back to vision
  assert.ok(app.messages.some(item=>item.channel==='minto:reply'&&item.value.detail==='LLM HTTP 401'));
 });
 test('periodic observation uses the multimodal primary without backup configuration',async t=>{
- const app=await desktop(t),seen=[];app.electron.net.fetch=async(_url,init)=>{const body=JSON.parse(init.body);seen.push(body.model);return {ok:true,json:async()=>({choices:[{message:{content:JSON.stringify({summary:'画面には文書が表示されています。',speak:false})}}]})};};
+ const app=await desktop(t),seen=[];app.electron.net.fetch=async(_url,init)=>{const body=JSON.parse(init.body);seen.push(body.model);return {ok:true,json:async()=>({choices:[{message:{content:JSON.stringify(body.messages[0].content.startsWith('公開本文の言語を検査します。')?{japanese:true}:{text:'マスター、ひと息ついてほしいのです。',emotion:'gentle',pose:'mPose0'})}}]})};};
  await app.call('settings-save',{llm:{api_base:'https://example.test/v1',model:'Primary',multimodal:true},voice:{enabled:false}});
  app.electron.desktopCapturer.getSources=async()=>[{display_id:'41',thumbnail:{isEmpty:()=>false,toJPEG:()=>Buffer.from('frame')}}];
- await vm.runInContext('observe()',app.context);assert.deepEqual(seen,['Primary']);assert.equal((await app.call('state')).busy,false);
+ await vm.runInContext('observe()',app.context);assert.deepEqual(seen,['Primary','Primary']);assert.equal((await app.call('state')).busy,false);
 });
 test('startup preference controls the packaged executable and rejects enabling a development launch',async t=>{
  const app=await desktop(t),calls=[];app.electron.app.setLoginItemSettings=value=>calls.push(value);
@@ -162,4 +162,35 @@ test('selecting another display commits its region only after successful selecti
 test('desktop synthesis sends separate kana reading while retaining original chat text',async t=>{
  const app=await desktop(t);app.electron.net.fetch=async()=>({ok:true,json:async()=>({choices:[{message:{content:JSON.stringify({speech_text:'オープンエーアイを使うのです。'})}}]})});await app.call('settings-save',{llm:{api_base:'https://example.test/v1',model:'Exact_Model'}});app.context.spoken=[];
  await vm.runInContext("active={controller:new AbortController()};voiceService={synthesize:async text=>{spoken.push(text);return Buffer.from('audio')}};synthesize('OpenAIを使うのです。',active)",app.context);assert.deepEqual(app.context.spoken,['オープンエーアイを使うのです。']);assert.equal((await app.call('state')).save.messages.length,0);
+});
+test('proactive replies use the primary image pipeline on an ordinary unchanged screen',async t=>{
+ const app=await desktop(t),seen=[];
+ app.electron.net.fetch=async(_url,init)=>{const body=JSON.parse(init.body);seen.push(body);const checking=body.messages[0].content.startsWith('公開本文の言語を検査します。');return new Response(JSON.stringify({choices:[{message:{content:JSON.stringify(checking?{japanese:true}:{text:'マスター、ひと息ついてほしいのです。',emotion:'gentle',pose:'mPose0'})}}]}));};
+ await app.call('settings-save',{llm:{api_base:'https://example.test/v1',model:'Exact_Main',multimodal:true},voice:{enabled:false}});
+ app.electron.desktopCapturer.getSources=async()=>[{display_id:'41',thumbnail:{isEmpty:()=>false,toJPEG:()=>Buffer.from('ordinary-static-screen')}}];
+ await vm.runInContext('observe()',app.context);
+ const state=await app.call('state');assert.equal(state.save.messages.length,2);assert.equal(state.save.messages[1].metadata.proactive,true);
+ assert.equal(seen.length,2);assert.equal(seen[0].messages.at(-1).content[1].type,'image_url');assert.equal(state.busy,false);
+ assert.equal(state.save.relationship.score,60,'Automatic prompts must not gain affection');
+});
+test('a disappeared single display is reconciled without expanding a selected region',async t=>{
+ const app=await desktop(t);
+ await app.call('settings-save',{observation:{display_id:'missing-display',capture_mode:'region',region_x:.1,region_y:.2,region_width:.3,region_height:.4}});
+ app.electron.desktopCapturer.getSources=async()=>[{display_id:'41',thumbnail:{isEmpty:()=>false,getSize:()=>({width:1920,height:1080}),crop:()=>({toJPEG:()=>Buffer.from('region')}),toJPEG:()=>Buffer.from('full-screen')}}];
+ await vm.runInContext('capture()',app.context);
+ const settings=(await app.call('state')).settings;assert.equal(settings.observation.display_id,'41');assert.equal(settings.observation.capture_mode,'region');assert.equal(settings.observation.region_width,.3);
+ app.electron.screen.getAllDisplays=()=>[{id:41},{id:82}];await app.call('settings-save',{observation:{display_id:'missing-again'}});
+ await assert.rejects(()=>vm.runInContext('capture()',app.context));assert.equal((await app.call('state')).settings.observation.display_id,'missing-again');
+});
+test('a human message interrupts a pending proactive request without committing a stale reply',async t=>{
+ const app=await desktop(t);let entered;const started=new Promise(resolve=>entered=resolve);
+ app.electron.net.fetch=async(_url,init)=>{const body=JSON.parse(init.body);const current=body.messages.at(-1).content;
+  if(Array.isArray(current)){entered();return new Promise((_resolve,reject)=>init.signal.addEventListener('abort',()=>reject(new DOMException('Aborted','AbortError')),{once:true}));}
+  const checking=body.messages[0].content.startsWith('公開本文の言語を検査します。');return new Response(JSON.stringify({choices:[{message:{content:JSON.stringify(checking?{japanese:true}:{text:'ありがとうなのです。',emotion:'happy',pose:'mPose3',relationshipSignal:{signal:'care',evidence:'谢谢你'}})}}]}));};
+ await app.call('settings-save',{llm:{api_base:'https://example.test/v1',model:'Exact_Main',multimodal:true},voice:{enabled:false}});
+ app.electron.desktopCapturer.getSources=async()=>[{display_id:'41',thumbnail:{isEmpty:()=>false,toJPEG:()=>Buffer.from('frame')}}];
+ const observing=vm.runInContext('observe()',app.context);await started;assert.equal((await app.call('state')).busyProactive,true);
+ await app.call('chat',{text:'谢谢你',observe:false});await observing;
+ for(let i=0;i<100;i++){if(!(await app.call('state')).busy)break;await new Promise(resolve=>setTimeout(resolve,10));}
+ const state=await app.call('state');assert.equal(state.save.messages.length,2);assert.equal(state.save.messages[0].content,'谢谢你');assert.equal(state.save.relationship.score,61);assert.equal(state.save.messages[1].metadata.proactive,false);
 });

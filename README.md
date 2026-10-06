@@ -1,5 +1,14 @@
 # MintoAssistant
 
+## 0.3.0 relationship and companionship
+
+Saves continue the established lovers relationship at **60/100**, with **80** as the threshold for intimate requests. Care, respect and sincere repair can add one point; hostility subtracts two and pressure subtracts three. Positive growth is capped at three per day. Duplicate input within 24 hours and automatic observations earn no points. The app owns score updates; the model supplies a semantic signal and an exact evidence span from the current human message. Scores do not force agreement or erase shared history. Relationship state survives restarts, save switching and import/export; older saves keep their full history and acquire the same baseline.
+
+The application loads `assets/skills/minto-persona.md`, which contains rewritten memories and source row references from both game volumes. Raw scripts and verified quotations remain local under `private/persona-corpus-030`. Initial difficulties with housework and magic are distinguished from later growth. Shared story memories do not become invented physical events in the current desktop session.
+
+Screen interaction focuses on companionship and the recent conversation. Mint offers a natural remark, care or useful help; specific text or error explanations follow explicit questions. Proactive observation attempts a short message every two minutes by default, including on unchanged screens. It pauses during requests, audio playback, locking, region selection or a user pause, and restarts the interval after a human exchange. Settings show status, last attempt, last proactive reply and actual error details. A missing display ID is reconciled only when there is exactly one actual display, preserving the selected normalized region; multiple displays require a new selection.
+
+
 [Source repository](https://github.com/Nya-Nya-Hoshino/minto-desktop-assistant)
 
 [日本語](README.ja.md) · [English](README.en.md) · [TTS training and model updates](docs/TRAINING.en.md)
@@ -12,7 +21,7 @@ The source repository contains the application code and documentation. Copyright
 
 ## Run a local distribution
 
-For the installer edition, run `MintoAssistant-Setup-0.2.2-windows-x64.exe` and select an installation directory. Installation is for the current Windows user.
+For the installer edition, run `MintoAssistant-Setup-0.3.0-windows-x64.exe` and select an installation directory. Installation is for the current Windows user.
 
 For the portable edition, extract the complete ZIP into a writable directory and run `MintoAssistant.exe`. Keep `portable.flag`, `resources`, and all DLLs together with the executable. Portable user data is stored in its adjacent `data` directory.
 
@@ -34,7 +43,7 @@ Reply text is Japanese. The application validates the structured reply and its e
 
 Configure one primary model and check **Primary model supports images and multimodal input** if it supports images. Screenshots, questions and recent history are sent together to the primary model. Backup vision is optional and collapsed by default. It is used when multimodal input is unchecked or the primary image request returns HTTP 400/415/422; the primary model then replies using that visual analysis. Authentication, rate-limit and network failures do not trigger fallback. Capture uses physical display resolution before cropping; current evidence takes precedence over old screen descriptions. Screenshots are not stored in saves.
 
-Choose the display in settings. A chat message can include the current screen, and the standalone screen action can describe it without typing a message. Periodic observation checks every 60 seconds by default. Proactive speech has a minimum interval of 120 seconds; it is skipped during another request, audio playback, screen lock, unchanged content, or when the vision result says there is nothing suitable to discuss. Pause observation from settings or the tray menu.
+Choose the display in settings. Chat can include the current screen, and the standalone screen action invites a natural companion remark using recent conversation. Periodic observation attempts proactive companionship every 120 seconds by default, including on unchanged screens. It waits during another request, audio playback, screen lock or region selection. Pause observation from settings or the tray menu.
 
 Screenshots are sent to the configured vision provider for the current request. Conversation saves retain observation summaries and timestamps, not screenshot files.
 

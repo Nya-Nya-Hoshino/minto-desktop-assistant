@@ -12,6 +12,9 @@ test('primary multimodal setting is explicit, persists and has translated option
 test('startup, typography and region controls and errors are translated into all three UI languages',()=>{
  const i18n=require('../i18n');for(const text of ['界面与启动','登录 Windows 时自动启动','字体名称','字号','观察范围','整个屏幕','框选区域','鼠标框选','拖动鼠标框选，松开保存；Esc 或右键取消','观察区域无效，请重新框选','字体名称无效','字号须在 10 到 28 之间','开机自启仅支持打包后的应用'])for(const language of ['ja','en'])assert.notEqual(i18n.translate(language,text),text,text);
 });
+test('relationship and observation status labels are available in all three interface languages',()=>{
+ const i18n=require('../i18n');for(const source of ['恋人关系与好感','好感 {score}/100 · {stage}','亲密','温暖','谨慎','需要修复','上次观察 {attempt} · 上次主动搭话 {spoken}','尚无记录','好感存档数据损坏'])for(const language of ['ja','en'])assert.notEqual(i18n.translate(language,source),source);
+});
 test('UI language defaults to Chinese, persists independently, and rejects undeclared locale values',t=>{
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'minto-language-'));t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
  const store=new SettingsStore(root,secure);assert.equal(store.public().ui?.language,'zh-CN');

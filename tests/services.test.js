@@ -70,6 +70,13 @@ test('persona prompt fixes Japanese speech and separates screen evidence', () =>
   const prompt=buildPrompt('画面摘要');assert.ok(prompt.includes('ボク'));assert.ok(prompt.includes('マスター'));
   assert.ok(prompt.includes('日本語'));assert.ok(prompt.includes('画面摘要'));
 });
+test('screen conversation prioritizes companionship while preserving explicit questions and exact evidence',async()=>{
+ let body;
+ await requestReply({api_base:'https://example.test/v1',model:'Exact_Main'},[],'画面を見て、ボクと少し話してほしい。','frame',{fetcher:async(_url,init)=>{const input=JSON.parse(init.body);if(!body)body=input;return new Response(JSON.stringify({choices:[{message:{content:JSON.stringify(input.messages[0].content.startsWith('公開本文の言語を検査します。')?{japanese:true}:{text:'マスター、ちょっと休むのです。',emotion:'gentle',pose:'mPose0'})}}]}));}});
+ assert.ok(body.messages[0].content.includes('画面を見ながらの会話も、マスターとの交流と付き添いが目的'));
+ assert.ok(body.messages.at(-1).content[0].text.includes('一覧の読み上げ'));
+ assert.ok(body.messages.at(-1).content[0].text.includes('具体的な質問'));
+});
 test('vision reads the current question and preserves exact visible wording',async()=>{
  const {describeScreen}=require('../services/assistant-service');let sent;
  await describeScreen({api_base:'https://example.test/v1',model:'Exact_Vision'},'frame',{question:'现在屏幕中的薄荷说了什么',fetcher:async(_url,init)=>{sent=JSON.parse(init.body);return new Response(JSON.stringify({choices:[{message:{content:JSON.stringify({summary:'Mint: It is sunny today.',speak:false})}}]}));}});
@@ -111,10 +118,19 @@ test('cancelled reply does not retry or complete', async () => {
   await assert.rejects(requestReply({api_base:'http://localhost',api_key:'test',model:'test'},[],'测试',null,{signal:control.signal,fetcher:async()=>{calls++;throw new DOMException('Aborted','AbortError');}}));
   assert.equal(calls,0);
 });
-test('observation suppresses unchanged screen and applies 120 second cooldown', () => {
+test('observation applies a 120 second cooldown and rechecks unchanged screens afterwards', () => {
   const gate=new ObservationGate(120000);const a=Buffer.from('frame-a');const b=Buffer.from('frame-b');
   assert.equal(gate.check(a,200000,false),true);gate.markSpoken(200000);
   assert.equal(gate.check(b,319999,false),false);assert.equal(gate.check(b,320000,false),true);
-  gate.markSpoken(320000);assert.equal(gate.check(b,500000,false),false);
+  gate.markSpoken(320000);assert.equal(gate.check(b,400000,false),false);assert.equal(gate.check(b,500000,false),true);
   assert.equal(gate.check(Buffer.from('frame-c'),600000,true),false);
+});
+test('an unchanged screen is eligible again after two minutes without permanently suppressing conversation',()=>{
+ const gate=new ObservationGate(120000),frame=Buffer.from('unchanged-screen');
+ assert.equal(gate.check(frame,200000,false),true);
+ assert.equal(gate.check(frame,200001,false),false);
+ assert.equal(gate.check(frame,320000,false),true);
+ gate.markSpoken(320000);
+ assert.equal(gate.check(frame,439999,false),false);
+ assert.equal(gate.check(frame,440000,false),true);
 });

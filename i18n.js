@@ -2,6 +2,17 @@
 'use strict';
 // Keys are exact source strings. Technical model IDs, user content and Japanese character speech are never translated.
 const rows=[
+["恋人关系与好感", "恋人関係と好感度", "Relationship and affection"],
+["好感 {score}/100 · {stage}", "好感度 {score}/100 · {stage}", "Affection {score}/100 · {stage}"],
+["亲密", "親密", "Close"],
+["温暖", "温かい", "Warm"],
+["谨慎", "慎重", "Cautious"],
+["需要修复", "関係を修復する時", "Needs repair"],
+["上次观察 {attempt} · 上次主动搭话 {spoken}", "前回の観察 {attempt} · 前回の声かけ {spoken}", "Last observation {attempt} · Last proactive message {spoken}"],
+["尚无记录", "まだ記録がありません", "No record yet"],
+["好感存档数据损坏", "好感度のセーブデータが破損しています", "Damaged relationship save data"],
+["好感评估格式无效", "好感度の評価形式が無効です", "Invalid relationship assessment format"],
+["延续游戏中的恋人关系。初始好感 60，亲密请求阈值 80。关心、尊重与修复关系可小幅加分；施压和羞辱会扣分。每日最多增加 3 分，重复发言和自动搭话不加分。高好感仍需双方意愿。", "ゲームの恋人関係を引き継ぎます。初期好感度は60、親密なお願いのしきい値は80です。気遣い、尊重、関係の修復で少し上がり、強制や侮辱で下がります。1日の上昇は3まで。同じ発言の繰り返しや自動会話では上がりません。高い好感度でもお互いの意思を尊重します。", "Continues the established lovers relationship. Affection starts at 60; intimate requests have a threshold of 80. Care, respect and repair can increase it slightly; pressure and insults decrease it. Daily positive growth is capped at 3. Repeated inputs and proactive messages do not earn points. Mutual willingness still matters at high affection."],
 ['主模型','メインモデル','Primary model'],['主模型支持图片等多模态输入','メインモデルは画像などのマルチモーダル入力に対応','Primary model supports images and multimodal input'],
 ['勾选后，截图、提问和对话历史直接交给主模型。请根据模型实际能力选择。','選択すると、画像・質問・会話履歴をメインモデルへ直接送ります。実際の対応能力に合わせて選択してください。','When checked, screenshots, questions and conversation history go directly to the primary model. Select according to its actual capabilities.'],
 ['备用视觉模型（可选）','予備の画像理解モデル（任意）','Backup vision model (optional)'],

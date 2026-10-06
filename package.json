@@ -1,6 +1,6 @@
 {
   "name": "minto-assistant",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "Minto Live2D desktop assistant with Japanese dialogue and local voice",
   "license": "Apache-2.0",
   "main": "main.js",
@@ -64,7 +64,9 @@
       "renderer/region.js",
       "services/screen-region.js",
       "services/region-selector.js",
-      "services/speech-reading.js"
+      "services/speech-reading.js",
+      "services/relationship-service.js",
+      "assets/skills/minto-persona.md"
     ],
     "asarUnpack": [
       "assets/minto/**/*"
