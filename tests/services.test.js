@@ -66,6 +66,12 @@ test('DeepSeek uses the documented thinking and effort fields',async()=>{
  await completion({provider:'DeepSeek',api_base:'https://api.deepseek.com',model:'deepseek-flash',reasoning_effort:'high'},[],{fetcher:async(_url,init)=>{body=JSON.parse(init.body);return new Response(JSON.stringify({choices:[{message:{content:'接続成功'}}]}));}});
  assert.equal(body.reasoning_effort,'high');assert.deepEqual(body.thinking,{type:'enabled'});
 });
+test('DeepSeek structured replies and language checks enable JSON mode while plain summaries retain text mode',async()=>{
+ const {completion}=require('../services/assistant-service'),bodies=[],config={provider:'DeepSeek',api_base:'https://api.deepseek.com',model:'deepseek-flash'};
+ const fetcher=async(_url,init)=>{const body=JSON.parse(init.body);bodies.push(body);return new Response(JSON.stringify({choices:[{message:{content:JSON.stringify(body.messages[0].content.startsWith('公開本文の言語を検査します。')?{japanese:true}:{text:'マスター、ありがとうなのです。',emotion:'gentle',pose:'mPose0',relationshipSignal:{signal:'care',evidence:'谢谢你陪我'}})}}]}));};
+ await requestReply(config,[],'谢谢你陪我',null,{fetcher});await completion(config,[{role:'user',content:'会話を要約してください。'}],{fetcher});
+ assert.deepEqual(bodies[0].response_format,{type:'json_object'});assert.deepEqual(bodies[1].response_format,{type:'json_object'});assert.equal(Object.hasOwn(bodies[2],'response_format'),false);
+});
 test('persona prompt fixes Japanese speech and separates screen evidence', () => {
   const prompt=buildPrompt('画面摘要');assert.ok(prompt.includes('ボク'));assert.ok(prompt.includes('マスター'));
   assert.ok(prompt.includes('日本語'));assert.ok(prompt.includes('画面摘要'));
@@ -104,6 +110,21 @@ test('invalid model language is repaired once with exact schema', async () => {
   };
   const result=await requestReply({api_base:'http://localhost:9011/v1',api_key:'test',model:'exact-test-model'},[], '测试',null,{fetcher});
   assert.equal(calls,3);assert.equal(result.text,'はい、マスター。');
+});
+for(const image of [null,'verified-frame'])test('format repair keeps the actual human message and affection evidence '+(image?'with screenshot':'without screenshot'),async t=>{
+ const user='辛苦了薄荷，谢谢你一直陪着我，我会尊重你的想法。',store=new SaveStore(temp(t));let replies=0,originalContent;
+ const fetcher=async(_url,init)=>{
+  const body=JSON.parse(init.body),check=body.messages[0].content.startsWith('公開本文の言語を検査します。');let raw;
+  if(check)raw=JSON.stringify({japanese:true});
+  else{
+   replies++;const last=body.messages.at(-1);
+   if(replies===1){originalContent=last.content;raw='日本語の本文。'+JSON.stringify({text:'マスター、ありがとうなのです。',emotion:'gentle',pose:'mPose0',relationshipSignal:{signal:'care',evidence:user}});}
+   else{assert.equal(last.role,'user');assert.deepEqual(last.content,originalContent);raw=JSON.stringify({text:'マスター、気持ちを大切にしてくれて嬉しいのです。',emotion:'gentle',pose:'mPose0',relationshipSignal:{signal:'care',evidence:user}});}
+  }
+  return new Response(JSON.stringify({choices:[{message:{content:raw}}]}));
+ };
+ const answer=await requestReply({api_base:'https://example.test/v1',model:'Exact_Chat'},[{role:'assistant',content:'こんにちはなのです。'}],user,image,{relationship:store.current().relationship,fetcher});
+ const saved=store.append(user,answer.text,{},answer.relationshipSignal);assert.equal(saved.relationship.score,61);assert.equal(saved.messages.at(-1).metadata.affectionDelta,1);assert.equal(replies,2);
 });
 test('Chinese prose with a Japanese character suffix is independently checked and repaired before publication',async()=>{
  let requests=0,replies=0;

@@ -3,7 +3,7 @@ const {createHash}=require('node:crypto');
 const SIGNALS=Object.freeze({neutral:0,care:1,repair:1,hostility:-2,pressure:-3});
 function initialRelationship(){return {version:1,score:60,bond:'lovers',positiveDate:'',positiveToday:0,recentInputs:[]};}
 function validateRelationship(value){
- if(!value||Array.isArray(value)||Object.keys(value).sort().join(',')!=='bond,positiveDate,positiveToday,recentInputs,score,version'||value.version!==1||value.bond!=='lovers'||!Number.isInteger(value.score)||value.score<0||value.score>100||!Number.isInteger(value.positiveToday)||value.positiveToday<0||value.positiveToday>3||typeof value.positiveDate!=='string'||!/^$|^\d{4}-\d{2}-\d{2}$/.test(value.positiveDate)||!Array.isArray(value.recentInputs)||value.recentInputs.length>200)throw new Error('好感存档数据损坏');
+ if(!value||Array.isArray(value)||Object.keys(value).sort().join(',')!=='bond,positiveDate,positiveToday,recentInputs,score,version'||value.version!==1||value.bond!=='lovers'||!Number.isInteger(value.score)||value.score<0||value.score>100||!Number.isInteger(value.positiveToday)||value.positiveToday<0||value.positiveToday>20||typeof value.positiveDate!=='string'||!/^$|^\d{4}-\d{2}-\d{2}$/.test(value.positiveDate)||!Array.isArray(value.recentInputs)||value.recentInputs.length>200)throw new Error('好感存档数据损坏');
  for(const entry of value.recentInputs)if(!entry||Object.keys(entry).sort().join(',')!=='at,hash'||typeof entry.hash!=='string'||!/^([a-f0-9]{64})$/.test(entry.hash)||typeof entry.at!=='string'||!Number.isFinite(Date.parse(entry.at)))throw new Error('好感存档数据损坏');
  return structuredClone(value);
 }
@@ -12,8 +12,8 @@ function validateSignal(value){
  return {signal:value.signal,evidence:value.evidence};
 }
 function relationshipStage(score){return score>=80?'亲密':score>=60?'温暖':score>=30?'谨慎':'需要修复';}
-function applyRelationship(current,user,assessment,{proactive=false,at=new Date().toISOString()}={}){
- const next=validateRelationship(current);if(proactive||!assessment)return {relationship:next,delta:0,signal:'neutral'};
+function applyRelationship(current,user,assessment,{proactive=false,at=new Date().toISOString(),dailyPositiveLimit=3}={}){
+ if(!Number.isInteger(dailyPositiveLimit)||dailyPositiveLimit<1||dailyPositiveLimit>20)throw new Error('每日好感增长上限须为 1 到 20 的整数');const next=validateRelationship(current);if(proactive||!assessment)return {relationship:next,delta:0,signal:'neutral'};
  const checked=validateSignal(assessment),evidence=checked.evidence.trim();
  if(!evidence||!user.includes(evidence))return {relationship:next,delta:0,signal:'neutral'};
  const now=new Date(at),today=[now.getFullYear(),String(now.getMonth()+1).padStart(2,'0'),String(now.getDate()).padStart(2,'0')].join('-');
@@ -22,7 +22,7 @@ function applyRelationship(current,user,assessment,{proactive=false,at=new Date(
  if(next.recentInputs.some(entry=>entry.hash===hash))return {relationship:next,delta:0,signal:'neutral'};
  next.recentInputs.push({hash,at});next.recentInputs=next.recentInputs.slice(-200);
  if(next.positiveDate!==today){next.positiveDate=today;next.positiveToday=0;}
- let delta=SIGNALS[checked.signal];if(delta>0){delta=Math.min(delta,3-next.positiveToday,100-next.score);next.positiveToday+=delta;}else delta=Math.max(delta,-next.score);
+ let delta=SIGNALS[checked.signal];if(delta>0){delta=Math.min(delta,Math.max(0,dailyPositiveLimit-next.positiveToday),100-next.score);next.positiveToday+=delta;}else delta=Math.max(delta,-next.score);
  next.score+=delta;return {relationship:next,delta,signal:checked.signal};
 }
 function relationshipPrompt(value=initialRelationship()){

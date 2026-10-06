@@ -3,6 +3,11 @@ const test=require('node:test'),assert=require('node:assert/strict'),fs=require(
 const {SettingsStore}=require('../services/settings-store');
 const secure={isEncryptionAvailable:()=>true,encryptString:s=>Buffer.from(s),decryptString:b=>b.toString()};
 function create(t){const root=fs.mkdtempSync(path.join(os.tmpdir(),'minto-settings-020-'));t.after(()=>fs.rmSync(root,{recursive:true,force:true}));return {root,store:new SettingsStore(root,secure)};}
+test('daily affection limit defaults to 3, supports 20 and survives settings restart',t=>{
+ const {root,store}=create(t);assert.equal(store.public().relationship.daily_positive_limit,3);
+ store.update({relationship:{daily_positive_limit:20}});assert.equal(new SettingsStore(root,secure).public().relationship.daily_positive_limit,20);
+ const before=fs.readFileSync(store.file,'utf8');for(const daily_positive_limit of [0,21,3.5,NaN,'20'])assert.throws(()=>store.update({relationship:{daily_positive_limit}}));assert.equal(fs.readFileSync(store.file,'utf8'),before);
+});
 test('old version 1 settings acquire appearance, startup and full-screen defaults',t=>{
  const {root}=create(t);fs.writeFileSync(path.join(root,'settings.json'),JSON.stringify({version:1,ui:{language:'ja'},voice:{length:1.2},observation:{display_id:'41'}}));
  const state=new SettingsStore(root,secure).public();assert.equal(state.ui.language,'ja');assert.equal(state.ui.launch_at_login,false);assert.equal(state.ui.font_family,'Microsoft YaHei');assert.equal(state.ui.font_size,14);assert.equal(state.observation.capture_mode,'screen');assert.equal(state.voice.length,1.2);

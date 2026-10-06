@@ -2,6 +2,17 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const {SaveStore}=require('../services/save-store');
 function store(t){const root=fs.mkdtempSync(path.join(os.tmpdir(),'minto-relationship-'));t.after(()=>fs.rmSync(root,{recursive:true,force:true}));return {root,saves:new SaveStore(root)};}
+test('configured daily limit allows 20 points and lowering it does not subtract affection',t=>{
+ const {root,saves}=store(t);
+ for(let i=0;i<21;i++)saves.append('谢谢你的关心'+i,'ありがとうなのです。',{}, {signal:'care',evidence:'谢谢'},{dailyPositiveLimit:20});
+ assert.equal(saves.current().relationship.score,80);assert.equal(saves.current().relationship.positiveToday,20);assert.equal(new SaveStore(root).current().relationship.score,80);
+ saves.append('我愿意认真听你的想法','嬉しいのです。',{}, {signal:'care',evidence:'认真听'},{dailyPositiveLimit:3});assert.equal(saves.current().relationship.score,80);assert.equal(saves.current().messages.at(-1).metadata.affectionDelta,0);
+ assert.equal(saves.import(saves.export()).relationship.positiveToday,20);
+});
+test('daily limit rejects invalid settings and never allows a limit above 20',()=>{
+ const {initialRelationship,applyRelationship}=require('../services/relationship-service');
+ for(const dailyPositiveLimit of [0,21,2.5,NaN,'20'])assert.throws(()=>applyRelationship(initialRelationship(),'谢谢',{signal:'care',evidence:'谢谢'},{dailyPositiveLimit}));
+});
 test('new and legacy saves retain lovers relationship at 60 without losing history',t=>{
  const {root,saves}=store(t);assert.equal(saves.current().relationship.score,60);assert.equal(saves.current().relationship.bond,'lovers');
  saves.append('hello','こんにちは。');const old=saves.current();delete old.relationship;fs.writeFileSync(saves.file(old.id),JSON.stringify(old));const restored=new SaveStore(root).current();assert.equal(restored.relationship.score,60);assert.equal(restored.messages.length,2);
