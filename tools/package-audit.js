@@ -19,7 +19,7 @@ function auditConfiguration(root) {
   assert.equal(manifest.build.nsis.packElevateHelper, false);
   assert.equal(manifest.build.extraResources[0].from, 'runtime');
   assert.equal(manifest.build.extraResources[0].to, 'runtime');
-  assert.equal(Object.keys(manifest.dependencies).length, 0);
+  assert.deepEqual(manifest.dependencies, {'@modelcontextprotocol/sdk':'1.32.1',yaml:'2.9.1'});
   const installer = fs.readFileSync(path.join(root, 'build', 'installer.nsh'), 'utf8');
   assert.ok(installer.includes('StrCpy $isForceCurrentInstall "1"'));
   assert.ok(!installer.includes('download') && !installer.includes('taskkill'));
@@ -55,15 +55,15 @@ function auditUnpacked(root, portable) {
   const archive = path.join(root, 'resources', 'app.asar');
   const entries = asar.listPackage(archive, {}).map(item => item.split(path.sep).join('/'));
   for (const item of entries) {
-    assert.ok(!/(^|\/)(_data|private|tools|tests|node_modules|xuan9\.0)(\/|$)/.test(item), 'Unexpected app archive path: ' + item);
-    if (/\.(js|json|html|md)$/.test(item)) {
+    assert.ok(!/(^|\/)(_data|private|tools|tests|xuan9\.0)(\/|$)/.test(item), 'Unexpected app archive path: ' + item);
+    if (/\.(js|json|html|md)$/.test(item) && Object.hasOwn(asar.statFile(archive, path.normalize(item.replace(/^\//, ''))), 'size')) {
       const text = asar.extractFile(archive, path.normalize(item.replace(/^\//, ''))).toString('utf8');
       checkTextSecrets(text, item);
     }
   }
   assert.ok(entries.includes('/assets/minto/Minto_Tuujou/Minto_Tuujou.model3.json'));
   assert.ok(entries.includes('/assets/minto/minto_Pajama/minto_Pajama.model3.json'));
-  for(const file of ['renderer/appearance.js','renderer/region.html','renderer/region.js','services/screen-region.js','services/region-selector.js','services/speech-reading.js'])assert.ok(entries.includes('/'+file),'Missing interaction resource: '+file);
+  for(const file of ['renderer/appearance.js','renderer/region.html','renderer/region.js','services/screen-region.js','services/region-selector.js','services/speech-reading.js','services/agent-service.js','services/agent-tools.js','services/agent-config.js','services/mcp-service.js','services/skill-service.js','assets/agent-skills/file-inspection/SKILL.md','assets/agent-skills/command-workflow/SKILL.md','node_modules/@modelcontextprotocol/sdk/package.json','node_modules/yaml/package.json'])assert.ok(entries.includes('/'+file),'Missing interaction resource: '+file);
   const totalBytes = paths.reduce((sum, file) => sum + fs.statSync(path.join(root, file)).size, 0);
   console.log(JSON.stringify({ event: 'package-audit', portable, files: paths.length, bytes: totalBytes }));
   return { portable, files: paths.length, bytes: totalBytes };

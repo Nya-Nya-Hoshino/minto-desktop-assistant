@@ -11,3 +11,5 @@ The runtime includes Python, PyTorch, NumPy, SciPy, Transformers and their depen
 Japanese BERT is [ku-nlp/deberta-v2-large-japanese-char-wwm](https://huggingface.co/ku-nlp/deberta-v2-large-japanese-char-wwm), by Kyoto University NLP. Its official model card is included beside the unchanged weights in `resources/runtime/bert/deberta-v2-large-japanese-char-wwm/README.md`. It is licensed under [Creative Commons Attribution-ShareAlike 4.0 International](https://creativecommons.org/licenses/by-sa/4.0/); the [full legal code](https://creativecommons.org/licenses/by-sa/4.0/legalcode.en) defines the license terms.
 
 This is a local personal-study build and is not a grant to redistribute the game assets or trained character voice.
+
+The lightweight tool client includes the official Model Context Protocol TypeScript SDK 1.32.1 and YAML 2.9.1 under their MIT and ISC licenses respectively. Their production dependencies retain license files in the application archive. The local tool loop references design patterns from DeepSeek Harness, Pi and OpenCode; their complete platforms are not included.

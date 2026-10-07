@@ -44,7 +44,7 @@ async function desktop(executable, output, singleInstanceData) {
 }
 function verifyDocuments(root, target) {
   const sha=file=>createHash('sha256').update(fs.readFileSync(file)).digest('hex');
-  for (const relative of ['README.md','README.en.md','README.ja.md','docs/TRAINING.en.md','docs/TRAINING.ja.md']) {
+  for (const relative of ['README.md','README.en.md','README.ja.md','docs/TRAINING.en.md','docs/TRAINING.ja.md','docs/TOOLS.en.md','docs/TOOLS.ja.md']) {
     assert.equal(sha(path.join(target,relative)),sha(path.join(root,relative)), 'Packaged document differs: '+relative);
   }
 }

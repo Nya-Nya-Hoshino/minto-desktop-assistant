@@ -1,6 +1,6 @@
 {
   "name": "minto-assistant",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Minto Live2D desktop assistant with Japanese dialogue and local voice",
   "license": "Apache-2.0",
   "main": "main.js",
@@ -12,7 +12,10 @@
     "build:portable": "node tools/package-release.js --portable-only",
     "package:audit": "node tools/package-audit.js"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.1",
+    "yaml": "2.9.1"
+  },
   "devDependencies": {
     "electron": "44.3.0",
     "electron-builder": "^25.1.0",
@@ -66,7 +69,15 @@
       "services/region-selector.js",
       "services/speech-reading.js",
       "services/relationship-service.js",
-      "assets/skills/minto-persona.md"
+      "assets/skills/minto-persona.md",
+      "services/agent-service.js",
+      "services/agent-tools.js",
+      "services/agent-config.js",
+      "services/mcp-service.js",
+      "services/skill-service.js",
+      "assets/agent-skills/**/*",
+      "!node_modules/**/{tests,test,__tests__,examples}{,/**/*}",
+      "!node_modules/**/*.{map,ts}"
     ],
     "asarUnpack": [
       "assets/minto/**/*"
@@ -115,6 +126,14 @@
       {
         "from": "docs/TRAINING.ja.md",
         "to": "docs/TRAINING.ja.md"
+      },
+      {
+        "from": "docs/TOOLS.en.md",
+        "to": "docs/TOOLS.en.md"
+      },
+      {
+        "from": "docs/TOOLS.ja.md",
+        "to": "docs/TOOLS.ja.md"
       }
     ],
     "win": {

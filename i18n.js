@@ -2,6 +2,65 @@
 'use strict';
 // Keys are exact source strings. Technical model IDs, user content and Japanese character speech are never translated.
 const rows=[
+["Search file exceeds 512 KiB; use a command for larger files", "検索対象が512 KiBを超えています。大きなファイルはコマンドで処理してください", "Search file exceeds 512 KiB; use a command for larger files", "搜索文件超过 512 KiB，请使用命令处理更大的文件"],
+["高级工具设置", "ツールの詳細設定", "Advanced tool settings"],
+["Agent 工作目录不存在", "ツールの作業フォルダーがありません", "Tool working directory does not exist", "工具工作目录不存在"],
+["Agent 检查不接受额外参数", "ツールの確認に追加パラメーターは指定できません", "Tool check does not accept extra parameters", "工具检查不接受额外参数"],
+["同名技能已存在", "同じ名前のスキルがすでにあります", "A skill with the same name already exists"],
+["技能导入不支持链接", "スキルの読み込みではリンクを使用できません", "Skill import does not support links"],
+["工具调用格式无效", "ツール呼び出しの形式が無効です", "Invalid tool call format"],
+["模型输出被截断，未执行工具", "モデル出力が途中で切れたため、ツールは実行していません", "Model output was truncated; tools were not executed"],
+["MCP 配置必须为最多 20 个服务器的 JSON 数组", "MCP 設定は最大20サーバーの JSON 配列にしてください", "MCP configuration must be a JSON array of up to 20 servers"],
+["MCP 服务器 ID 无效或重复", "MCP サーバー ID が無効または重複しています", "MCP server ID is invalid or duplicated"],
+["MCP 配置包含未知字段", "MCP 設定に不明なフィールドがあります", "MCP configuration contains an unknown field"],
+["MCP stdio 命令与参数无效", "MCP stdio のコマンドまたは引数が無効です", "MCP stdio command or arguments are invalid"],
+["MCP HTTP 地址无效", "MCP HTTP URL が無効です", "MCP HTTP URL is invalid"],
+["MCP 传输方式无效", "MCP の通信方式が無効です", "MCP transport is invalid"],
+["MCP 环境变量或请求头格式无效", "MCP の環境変数またはヘッダーの形式が無効です", "MCP environment variables or headers have an invalid format"],
+["Agent 步数或命令超时超出范围", "ツールのステップ数またはタイムアウトが範囲外です", "Tool steps or command timeout are out of range", "工具步数或命令超时超出范围"],
+["Skill 目录必须为路径字符串的 JSON 数组", "スキルフォルダーはパス文字列の JSON 配列にしてください", "Skill directories must be a JSON array of path strings"],
+["MCP 保留凭据不存在", "保持する MCP 認証情報がありません", "Saved MCP credential to retain does not exist"],
+["Agent 单次工具调用过多", "一度のツール呼び出しが多すぎます", "Too many tool calls at once", "单次工具调用过多"],
+["Command timed out", "コマンドがタイムアウトしました", "Command timed out", "命令执行超时"],
+["MCP tool limit exceeded", "MCP ツールの上限を超えました", "MCP tool limit exceeded", "MCP 工具数量超出上限"],
+["Tool arguments do not match schema", "ツールの引数がスキーマと一致しません", "Tool arguments do not match schema", "工具参数与结构定义不匹配"],
+["Tool argument type is invalid: ", "ツールの引数型が無効です：", "Tool argument type is invalid: ", "工具参数类型无效："],
+["Unknown tool: ", "不明なツール：", "Unknown tool: ", "未知工具："],
+["Unknown MCP tool: ", "不明な MCP ツール：", "Unknown MCP tool: ", "未知 MCP 工具："],
+["Text file exceeds 2 MiB; use a command for larger files", "テキストが2 MiBを超えています。大きなファイルはコマンドで処理してください", "Text file exceeds 2 MiB; use a command for larger files", "文本文件超过 2 MiB，请使用命令处理更大的文件"],
+["File is binary; use a suitable skill", "バイナリファイルです。対応するスキルを使用してください", "File is binary; use a suitable skill", "文件为二进制，请使用适用技能"],
+["SKILL.md exceeds 128 KiB", "SKILL.md が128 KiBを超えています", "SKILL.md exceeds 128 KiB", "SKILL.md 超过 128 KiB"],
+["SKILL.md YAML frontmatter is missing", "SKILL.md に YAML フロントマターがありません", "SKILL.md YAML frontmatter is missing", "SKILL.md 缺少 YAML 前置元数据"],
+["Skill name or description is invalid", "スキルの名前または説明が無効です", "Skill name or description is invalid", "技能名称或描述无效"],
+["Duplicate skill name: ", "スキル名が重複しています：", "Duplicate skill name: ", "技能名称重复："],
+["Skill not found: ", "スキルが見つかりません：", "Skill not found: ", "技能不存在："],
+["Skill resource is outside its directory", "スキルのリソースがフォルダーの外にあります", "Skill resource is outside its directory", "技能资源位于技能目录之外"],
+["Skill resource exceeds 512 KiB", "スキルのリソースが512 KiBを超えています", "Skill resource exceeds 512 KiB", "技能资源超过 512 KiB"],
+["工具与技能", "ツールとスキル", "Tools and skills"],
+["启用工具调用", "ツール呼び出しを有効にする", "Enable tool calling"],
+["工具使用当前 Windows 用户的完整权限执行命令、读写文件和调用已配置的 MCP 服务，不逐项请求确认。可随时在对话窗口停止。", "ツールは現在の Windows ユーザーの全権限でコマンド実行、ファイルの読み書き、設定済み MCP サービスの呼び出しを行い、操作ごとの確認は求めません。会話画面からいつでも停止できます。", "Tools run commands, read and write files, and call configured MCP services with the current Windows user’s full permissions, without asking for confirmation on each action. Stop at any time in the chat window."],
+["工作目录", "作業フォルダー", "Working directory"],
+["留空时使用应用数据目录下的 agent-workspace，并自动创建。请填写实际存在的目录。", "空欄の場合はアプリのデータフォルダー内に agent-workspace を自動作成して使用します。実在するフォルダーを指定してください。", "Leave blank to use agent-workspace inside the application data folder, created automatically. Enter an existing folder."],
+["最大执行步数", "最大実行ステップ数", "Maximum execution steps"],
+["命令超时（秒）", "コマンドのタイムアウト（秒）", "Command timeout (seconds)"],
+["MCP 服务器 JSON", "MCP サーバー JSON", "MCP server JSON"],
+["填写 JSON 数组。stdio 项使用 id、transport、command、args、env；http 项使用 id、transport、url、headers。已保存的 env 与 headers 值显示保留标记；保留该标记可继续使用原值，填写新值可替换。", "JSON 配列を入力してください。stdio は id、transport、command、args、env、http は id、transport、url、headers を使用します。保存済みの env と headers の値は保持マーカーで表示されます。マーカーを残すと元の値を維持し、新しい値を入力すると置き換えます。", "Enter a JSON array. stdio entries use id, transport, command, args and env; http entries use id, transport, url and headers. Saved env and headers values show a keep marker. Retain the marker to keep the saved value, or enter a new value to replace it."],
+["技能目录 JSON", "スキルフォルダー JSON", "Skill directory JSON"],
+["填写技能根目录路径字符串的 JSON 数组；根目录下各技能文件夹包含 SKILL.md。导入会复制技能目录到应用数据目录。", "スキルのルートフォルダーパス文字列の JSON 配列を入力してください。ルート内の各スキルフォルダーには SKILL.md が必要です。読み込んだスキルフォルダーはアプリのデータフォルダーにコピーされます。", "Enter a JSON array of skill root folder path strings. Each skill folder under a root contains SKILL.md. Import copies the skill folder into the application data folder."],
+["保存并检查工具与技能", "保存してツールとスキルを確認", "Save and check tools and skills"],
+["导入技能目录", "スキルフォルダーを読み込む", "Import skill folder"],
+["检查只连接 MCP 并读取工具清单和技能，不执行工具。", "確認は MCP への接続とツール一覧・スキルの取得のみを行い、ツールを実行しません。", "The check connects to MCP and reads tool lists and skills without executing tools."],
+["工具活动", "ツールの実行履歴", "Tool activity"],
+["正在使用工具", "ツールを使用しています", "Using tools"],
+["工具执行完成", "ツールの実行が完了しました", "Tool execution completed"],
+["工具执行已停止", "ツールの実行を停止しました", "Tool execution stopped"],
+["工具执行失败", "ツールの実行に失敗しました", "Tool execution failed"],
+["第 {step} 步 · {tool}", "ステップ {step} · {tool}", "Step {step} · {tool}"],
+["工具返回 · {tool}", "ツールの結果 · {tool}", "Tool result · {tool}"],
+["工具错误 · {tool}", "ツールのエラー · {tool}", "Tool error · {tool}"],
+["已连接工具 {tools} 个 · 已读取技能 {skills} 个", "接続済みツール {tools} 件 · 取得済みスキル {skills} 件", "Connected tools: {tools} · Loaded skills: {skills}"],
+["工具与技能检查未通过 · 工具 {tools} 个 · 技能 {skills} 个", "ツールとスキルの確認に失敗 · ツール {tools} 件 · スキル {skills} 件", "Tool and skill check failed · Tools: {tools} · Skills: {skills}"],
+["技能已导入：{name}", "スキルを読み込みました：{name}", "Skill imported: {name}"],
 ["每日好感增长上限", "1日の好感度上昇上限", "Daily affection gain limit"],
 ["每日好感增长上限须为 1 到 20 的整数", "1日の好感度上昇上限は1から20の整数で指定してください", "Daily affection gain limit must be an integer from 1 to 20"],
 ["恋人关系与好感", "恋人関係と好感度", "Relationship and affection"],
@@ -47,13 +106,13 @@ const japaneseRows=[
 ['そばにいるのです。','陪在你身边。','Right here with you.'],['閉じる','关闭','Close'],['話したいこと、聞かせてほしいのです。','想聊什么都可以告诉我。','Tell me what’s on your mind.'],['ミントに話しかける…','和ミント说话…','Talk to Minto…'],['送信','发送','Send'],['中止','停止','Stop'],['画面も見る','同时看屏幕','Include screen'],['画面を見る','查看屏幕','Observe screen'],['設定','设置','Settings'],['観察を休む','暂停观察','Pause observation'],['観察を再開','恢复观察','Resume observation'],['ドラッグで移動','拖动以移动','Drag to move'],['小さく','缩小','Smaller'],['話す','聊天','Chat'],['大きく','放大','Larger'],['あなた','你','You'],['少し待ってほしいのです…','请稍等…','Please wait…'],['考えているのです…','正在思考…','Thinking…'],['設定を読み込めませんでした。','无法读取设置。','Could not load settings.'],['送信できませんでした。設定を確認してください。','发送失败，请检查设置。','Could not send. Check your settings.'],['画面を見ているのです…','正在查看屏幕…','Observing the screen…'],['画面を観察できませんでした。設定を確認してください。','无法观察屏幕，请检查设置。','Could not observe the screen. Check your settings.'],['会話の要約を更新できませんでした。','无法更新对话摘要。','Could not update the conversation summary.'],['中止しました。','已停止。','Stopped.'],['接続できませんでした。設定を確認してください。','连接失败，请检查设置。','Could not connect. Check your settings.'],['画面を観察できませんでした。','无法观察屏幕。','Could not observe the screen.'],['接続設定を確認してください。','请检查连接设置。','Check your connection settings.'],['音声を再生できませんでした。','无法播放语音。','Could not play speech.'],['ミントを読み込めませんでした。設定を確認してください。','无法加载ミント，请检查设置。','Could not load Minto. Check your settings.']
 ];
 const catalogs={'zh-CN':{},ja:{},en:{}};
-for(const [source,ja,en]of rows){catalogs['zh-CN'][source]=source;catalogs.ja[source]=ja;catalogs.en[source]=en;}
+for(const [source,ja,en,zh=source]of rows){catalogs['zh-CN'][source]=zh;catalogs.ja[source]=ja;catalogs.en[source]=en;}
 for(const [source,zh,en]of japaneseRows){catalogs['zh-CN'][source]=zh;catalogs.ja[source]=source;catalogs.en[source]=en;}
 for(const value of Object.values(catalogs))Object.freeze(value);Object.freeze(catalogs);
 const languages=Object.freeze(['zh-CN','ja','en']);
 function translate(language,source,values={}){const catalog=catalogs[language]||catalogs['zh-CN'];const text=Object.hasOwn(catalog,source)?catalog[source]:source;return text.replace(/\{([a-z]+)\}/g,(match,key)=>Object.hasOwn(values,key)?String(values[key]):match);}
 const errorKeys=Object.keys(catalogs['zh-CN']).sort((a,b)=>b.length-a.length);
-const compoundPrefixes=['模型验证失败 HTTP ','语音模型列表 HTTP ','语音合成 HTTP ','无法启动本地语音：','实际模型：'];
+const compoundPrefixes=['模型验证失败 HTTP ','语音模型列表 HTTP ','语音合成 HTTP ','无法启动本地语音：','实际模型：','Tool argument type is invalid: ','Unknown tool: ','Unknown MCP tool: ','Duplicate skill name: ','Skill not found: '];
 function localizeError(language,value){
  let text=String(value);if(text.includes('\n'))return text.split('\n').map(line=>localizeError(language,line)).join('\n');
  for(const sourceLanguage of languages){const prefix=translate(sourceLanguage,'运行状态：{status}',{status:''});if(text.startsWith(prefix))return translate(language,'运行状态：{status}',{status:localizeError(language,text.slice(prefix.length))});}

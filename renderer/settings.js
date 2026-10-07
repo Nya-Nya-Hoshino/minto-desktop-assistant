@@ -1,8 +1,8 @@
 'use strict';
 const api=window.minto,i18n=window.MintoI18n;let state,dirty=false,language='zh-CN';const clearKeys=new Set(),statusRecords=new Map();
-const groups={relationship:['daily_positive_limit'],ui:['language','launch_at_login','font_family','font_size'],llm:['provider','api_base','model','reasoning_effort','multimodal'],vision:['provider','api_base','model','reasoning_effort'],voice:['enabled','engine','api_base','model_id','speaker_name','style','length','style_weight'],observation:['enabled','display_id','interval_seconds','cooldown_seconds','capture_mode','region_x','region_y','region_width','region_height']};
+const groups={agent:['enabled','working_directory','max_steps','command_timeout_seconds','mcp_servers_json','skill_directories_json'],relationship:['daily_positive_limit'],ui:['language','launch_at_login','font_family','font_size'],llm:['provider','api_base','model','reasoning_effort','multimodal'],vision:['provider','api_base','model','reasoning_effort'],voice:['enabled','engine','api_base','model_id','speaker_name','style','length','style_weight'],observation:['enabled','display_id','interval_seconds','cooldown_seconds','capture_mode','region_x','region_y','region_width','region_height']};
 const element=id=>document.getElementById(id),t=(source,values)=>i18n.translate(language,source,values);
-function status(id,source,values){statusRecords.set(id,{source,values});element(id).textContent=i18n.localizeError(language,t(source,values));}
+function status(id,source,values,details=[]){statusRecords.set(id,{source,values,details});element(id).textContent=[i18n.localizeError(language,t(source,values)),...details.map(detail=>i18n.localizeError(language,detail))].join('\n');}
 let voiceModels={};
 function voiceOptions(config){
  const option=(value,label)=>{const node=document.createElement('option');node.value=value;node.textContent=label;return node;};
@@ -17,7 +17,7 @@ function voiceOptions(config){
  }
 }
 function localize(){
- i18n.apply(document,language);for(const [id,{source,values}]of statusRecords)status(id,source,values);
+ i18n.apply(document,language);for(const [id,{source,values,details}]of statusRecords)status(id,source,values,details);
  if(state){const voice=collect().voice;voiceOptions(voice);element('pause-observation').textContent=t(state.paused?'恢复主动观察':'暂停主动观察');}
  const empty=[...element('observation-display_id').options].find(option=>option.value==='');if(empty)empty.textContent=t('请选择屏幕');
 }
@@ -45,6 +45,8 @@ async function save(){const config=await api.settingsSave(collect());if(state)st
 localize();document.addEventListener('input',event=>{if(event.target.id==='ui-language')return;dirty=true;status('settings-status','有未保存的设置。');});
 element('ui-language').onchange=async()=>{const previous=language;language=element('ui-language').value;localize();try{await api.language(language);}catch(error){language=previous;element('ui-language').value=previous;localize();status('settings-status',error.message);}};
 element('settings-save').onclick=()=>save().catch(error=>status('settings-status',error.message));
+element('agent-test').onclick=async()=>{const button=element('agent-test');button.disabled=true;status('agent-test-status','正在测试…');try{await save();const result=await api.agentTest();status('agent-test-status',result.ok?'已连接工具 {tools} 个 · 已读取技能 {skills} 个':'工具与技能检查未通过 · 工具 {tools} 个 · 技能 {skills} 个',{tools:result.tools.length,skills:result.skills.length},result.errors);}catch(error){status('agent-test-status',error.message);}finally{button.disabled=false;}};
+element('agent-skill-import').onclick=async()=>{const button=element('agent-skill-import');button.disabled=true;try{await save();const result=await api.skillImport();if(result.cancelled){status('agent-test-status','已取消。');return;}const value=await api.state();settingsRender(value.settings);stateRender(value);status('agent-test-status','技能已导入：{name}',{name:result.name});}catch(error){status('agent-test-status',error.message);}finally{button.disabled=false;}};
 for(const button of document.querySelectorAll('[data-test]'))button.onclick=async()=>{const group=button.dataset.test;button.disabled=true;status(group+'-test-status','正在测试…');try{await save();const result=await api.connectionTest(group);status(group+'-test-status',result.message);if(group==='voice'&&result.ok)status('voice-test-status',result.message+'\n'+t('实际模型：')+Object.keys(result.models).join(', '));}catch(error){status(group+'-test-status',error.message);}finally{button.disabled=false;}};
 for(const button of document.querySelectorAll('[data-clear-key]'))button.onclick=()=>{clearKeys.add(button.dataset.clearKey);element(button.dataset.clearKey+'-api_key').value='';status(button.dataset.clearKey+'-key-status','保存后清除');dirty=true;};
 element('refresh-displays').onclick=()=>refreshDisplays().catch(error=>status('settings-status',error.message));element('pause-observation').onclick=()=>api.pause();element('skin-list').onchange=()=>api.skin(element('skin-list').value).catch(error=>status('settings-status',error.message));element('save-list').onchange=()=>saveDetail();
