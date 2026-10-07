@@ -2,6 +2,12 @@
 'use strict';
 // Keys are exact source strings. Technical model IDs, user content and Japanese character speech are never translated.
 const rows=[
+["回复 JSON 不完整或格式无效", "返事の JSON が不完全または無効です", "Reply JSON is incomplete or invalid"],
+["接口返回的 JSON 不完整，请稍后重试", "API の JSON 応答が不完全です。少し待って再試行してください", "API JSON response is incomplete; try again shortly"],
+["模型返回空白回复，请稍后重试", "モデルの返事が空です。少し待って再試行してください", "Model returned a blank reply; try again shortly"],
+["格式整理改变了原始回复", "形式の整理で元の返事が変更されたため使用しませんでした", "Formatting changed the original observed reply"],
+["暂时无法生成回复，请稍后重试。", "今は返事を生成できませんでした。少し待って再試行してください。", "Could not generate a reply. Try again shortly."],
+
 ["Search file exceeds 512 KiB; use a command for larger files", "検索対象が512 KiBを超えています。大きなファイルはコマンドで処理してください", "Search file exceeds 512 KiB; use a command for larger files", "搜索文件超过 512 KiB，请使用命令处理更大的文件"],
 ["高级工具设置", "ツールの詳細設定", "Advanced tool settings"],
 ["Agent 工作目录不存在", "ツールの作業フォルダーがありません", "Tool working directory does not exist", "工具工作目录不存在"],

@@ -7,6 +7,8 @@ Mint can inspect files, search folders and run PowerShell commands in the existi
 
 Japanese/JSON repair now retains the original human message and attached image. Affection is assessed against that message, rather than an internal formatting instruction.
 
+Automatic observation now preserves Japanese replies while arranging expression fields separately. Empty model output receives one bounded retry, and malformed responses show a clear error.
+
 ## 0.3.0 relationship and companionship
 
 Saves continue the established lovers relationship at **60/100**, with **80** as the threshold for intimate requests. Care, respect and sincere repair can add one point; hostility subtracts two and pressure subtracts three. Positive growth defaults to three per day; settings allow an integer limit from one to twenty. Duplicate input within 24 hours and automatic observations earn no points. The app owns score updates; the model supplies a semantic signal and an exact evidence span from the current human message. Scores do not force agreement or erase shared history. Relationship state survives restarts, save switching and import/export; older saves keep their full history and acquire the same baseline.

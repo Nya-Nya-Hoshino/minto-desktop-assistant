@@ -54,7 +54,7 @@ async function reply(text,{observe=false,screenSummary='',observedAt=null,proact
    observedAt=new Date().toISOString();
   }
   const save=saves.current();let answer;
-  const replyOptions={signal:request.controller.signal,fetcher:serviceFetch,screenSummary,summary:save.summary,relationship:save.relationship};
+  const replyOptions={signal:request.controller.signal,fetcher:serviceFetch,screenSummary,summary:save.summary,relationship:save.relationship,proactive};
   try{answer=settings.value.agent.enabled?await agentReply(saves.context(12),text,screenImage,replyOptions,request):await requestReply(settings.value.llm,saves.context(12),text,screenImage,replyOptions);}
   catch(error){if(!screenImage||!imageInputRejected(error)||!configured('vision'))throw error;const observation=await describeScreen(settings.value.vision,screenImage,{signal:request.controller.signal,fetcher:serviceFetch,question:text});screenSummary=observation.summary;answer=settings.value.agent.enabled?await agentReply(saves.context(12),text,null,{...replyOptions,screenSummary},request):await requestReply(settings.value.llm,saves.context(12),text,null,{...replyOptions,screenSummary});}
   if(active!==request||saves.current().id!==request.saveId||request.controller.signal.aborted)return;
@@ -65,7 +65,7 @@ async function reply(text,{observe=false,screenSummary='',observedAt=null,proact
   await synthesize(answer.text,request);if(saves.current().messages.length%20===0&&!request.controller.signal.aborted)summarize(request.saveId);
   return answer;
  }catch(error){
-  if(active===request&&saves.current().id===request.saveId){if(proactive&&error.name!=='AbortError')observationError=errorText(error);emit('minto:reply',{status:error.name==='AbortError'?'cancelled':proactive?'observation-error':'error',message:error.name==='AbortError'?t('中止しました。'):t('接続できませんでした。設定を確認してください。'),detail:errorText(error)});}
+  if(active===request&&saves.current().id===request.saveId){if(proactive&&error.name!=='AbortError')observationError=errorText(error);emit('minto:reply',{status:error.name==='AbortError'?'cancelled':proactive?'observation-error':'error',message:error.name==='AbortError'?t('中止しました。'):t('暂时无法生成回复，请稍后重试。'),detail:errorText(error)});}
  }finally{if(active===request){active=null;busy=false;broadcast();}request.resolveFinished();}
 }
 async function observe(){
