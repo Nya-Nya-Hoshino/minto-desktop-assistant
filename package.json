@@ -77,7 +77,16 @@
       "services/skill-service.js",
       "assets/agent-skills/**/*",
       "!node_modules/**/{tests,test,__tests__,examples}{,/**/*}",
-      "!node_modules/**/*.{map,ts}"
+      "!node_modules/**/*.{map,ts}",
+      "markdown-preload.js",
+      "services/markdown-reader.js",
+      "renderer/markdown.html",
+      "renderer/markdown.js",
+      "libs/marked.umd.js",
+      "libs/purify.min.js",
+      "libs/licenses/marked-LICENSE",
+      "libs/licenses/DOMPurify-LICENSE",
+      "libs/licenses/DOMPurify-LICENSE-MPL"
     ],
     "asarUnpack": [
       "assets/minto/**/*"

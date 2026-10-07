@@ -7,7 +7,9 @@ Mint can inspect files, search folders and run PowerShell commands in the existi
 
 Japanese/JSON repair now retains the original human message and attached image. Affection is assessed against that message, rather than an internal formatting instruction.
 
-Automatic observation now preserves Japanese replies while arranging expression fields separately. Empty model output receives one bounded retry, and malformed responses show a clear error.
+Automatic observation and ordinary chat preserve Japanese replies while arranging expression fields separately. Empty model output receives one bounded retry, and malformed responses show a clear error.
+
+Right-click a Minto reply and select “Read as Markdown” to open a movable, resizable reader. Switch between Preview and Source for headings, lists, tables and code blocks. Source stays identical to the saved reply; earlier conversations also work.
 
 ## 0.3.0 relationship and companionship
 

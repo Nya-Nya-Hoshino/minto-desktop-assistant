@@ -13,3 +13,5 @@ Japanese BERT is [ku-nlp/deberta-v2-large-japanese-char-wwm](https://huggingface
 This is a local personal-study build and is not a grant to redistribute the game assets or trained character voice.
 
 The lightweight tool client includes the official Model Context Protocol TypeScript SDK 1.32.1 and YAML 2.9.1 under their MIT and ISC licenses respectively. Their production dependencies retain license files in the application archive. The local tool loop references design patterns from DeepSeek Harness, Pi and OpenCode; their complete platforms are not included.
+
+The local Markdown reader includes Marked 18.1.0 (MIT, https://github.com/markedjs/marked) and DOMPurify 3.4.16 (Apache-2.0 or MPL-2.0, https://github.com/cure53/DOMPurify). Browser distributions and license texts are retained under libs and libs/licenses.

@@ -2,6 +2,7 @@
 'use strict';
 // Keys are exact source strings. Technical model IDs, user content and Japanese character speech are never translated.
 const rows=[
+['Markdown 阅读','Markdown ビューアー','Markdown reader'],['以 Markdown 阅读','Markdown で読む','Read as Markdown'],['预览','プレビュー','Preview'],['原文','原文','Source'],['无法打开 Markdown 阅读窗口','Markdown ビューアーを開けません','Could not open Markdown reader'],
 ["回复 JSON 不完整或格式无效", "返事の JSON が不完全または無効です", "Reply JSON is incomplete or invalid"],
 ["接口返回的 JSON 不完整，请稍后重试", "API の JSON 応答が不完全です。少し待って再試行してください", "API JSON response is incomplete; try again shortly"],
 ["模型返回空白回复，请稍后重试", "モデルの返事が空です。少し待って再試行してください", "Model returned a blank reply; try again shortly"],
