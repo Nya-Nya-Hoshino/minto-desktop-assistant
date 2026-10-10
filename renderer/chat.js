@@ -1,5 +1,5 @@
 'use strict';
-const api=window.minto,i18n=window.MintoI18n;let currentState,lastSave='',renderedCount=-1,language='zh-CN',statusSource='話したいこと、聞かせてほしいのです。';
+const api=window.minto,i18n=window.MintoI18n;let currentState,lastSave='',renderedCount=-1,language='zh-CN',statusSource='話したいこと、聞かせてほしいのです。',submitting=false;
 const panel=document.getElementById('chat-panel'),history=document.getElementById('chat-history'),status=document.getElementById('chat-status'),input=document.getElementById('chat-input'),t=(source,values)=>i18n.translate(language,source,values);
 function setStatus(source){statusSource=source;status.textContent=i18n.localizeError(language,t(source));}
 function toggle(force){api.chatToggle(force);if(force!==false)input.focus();}
@@ -11,10 +11,33 @@ function activityRow(event){const row=document.createElement('details'),summary=
 function activityRender(){const expanded=[...activity.children].map(row=>row.open);activity.replaceChildren(...activityRecords.map((event,index)=>{const row=activityRow(event);row.open=Boolean(expanded[index]);return row;}));activity.hidden=activityRecords.length===0;activity.scrollTop=activity.scrollHeight;}
 function agentEvent(event){if(event.status==='start'){clearActivity();setStatus('正在使用工具');return;}if(event.status==='tool-start'||event.status==='tool-result'){activityRecords.push(event);activity.appendChild(activityRow(event));if(activityRecords.length>100){activityRecords.shift();activity.firstElementChild.remove();}activity.hidden=false;activity.scrollTop=activity.scrollHeight;return;}const messages={done:'工具执行完成',cancelled:'工具执行已停止',error:'工具执行失败'};if(Object.hasOwn(messages,event.status))setStatus(event.message?messages[event.status]+'\n'+event.message:messages[event.status]);}
 api.onAgent(agentEvent);
-function render(state){if(lastSave&&lastSave!==state.save.id)clearActivity();window.MintoAppearance.apply(document,state.settings.ui);const changed=language!==state.settings.ui.language;language=state.settings.ui.language;currentState=state;document.getElementById('relationship-label').textContent=t('好感 {score}/100 · {stage}',{score:state.save.relationship.score,stage:t(state.relationshipStage)});document.getElementById('relationship-meter').value=state.save.relationship.score;if(changed){i18n.apply(document,language);setStatus(statusSource);activityRender();}if(changed||lastSave!==state.save.id||renderedCount!==state.save.messages.length){history.replaceChildren();for(const [messageIndex,message] of state.save.messages.entries())append(message.role,message.content,messageIndex);history.scrollTop=history.scrollHeight;lastSave=state.save.id;renderedCount=state.save.messages.length;}document.getElementById('send-button').hidden=state.busy&&!state.busyProactive;document.getElementById('cancel-button').hidden=!(state.busy||state.busyAudio);input.disabled=state.busy&&!state.busyProactive;document.getElementById('observe-screen-button').disabled=state.busy;document.getElementById('observe-region-button').disabled=state.busy||state.busyAudio;document.getElementById('pause-button').textContent=t(state.paused?'観察を再開':'観察を休む');if(state.busy)setStatus('少し待ってほしいのです…');else if(['少し待ってほしいのです…','考えているのです…'].includes(statusSource))setStatus('');}
+const latest=document.getElementById('chat-latest');
+function atLatest(){return history.scrollHeight-history.scrollTop-history.clientHeight<48;}
+function scrollLatest(){history.scrollTop=history.scrollHeight;latest.hidden=true;}
+latest.onclick=scrollLatest;history.addEventListener('scroll',()=>{if(atLatest())latest.hidden=true;});
+function resizeInput(){input.style.height='auto';input.style.height=Math.min(input.scrollHeight,100)+'px';}
+input.addEventListener('input',resizeInput);
+input.addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing&&event.keyCode!==229){event.preventDefault();document.getElementById('chat-form').requestSubmit();}});
+function render(state){
+ const saveChanged=lastSave!==state.save.id,follow=saveChanged||atLatest(),scrollTop=history.scrollTop;
+ if(lastSave&&saveChanged)clearActivity();window.MintoAppearance.apply(document,state.settings.ui);const changed=language!==state.settings.ui.language;language=state.settings.ui.language;currentState=state;
+ document.getElementById('relationship-label').textContent=t('好感 {score}/100 · {stage}',{score:state.save.relationship.score,stage:t(state.relationshipStage)});document.getElementById('relationship-meter').value=state.save.relationship.score;
+ if(changed){i18n.apply(document,language);setStatus(statusSource);activityRender();}
+ if(changed||saveChanged||renderedCount!==state.save.messages.length){const newMessages=!saveChanged&&state.save.messages.length>renderedCount;history.replaceChildren();for(const [messageIndex,message] of state.save.messages.entries())append(message.role,message.content,messageIndex);if(follow)scrollLatest();else{history.scrollTop=scrollTop;if(newMessages)latest.hidden=false;}lastSave=state.save.id;renderedCount=state.save.messages.length;}
+ document.getElementById('chat-empty').hidden=state.save.messages.length!==0;
+ document.getElementById('send-button').hidden=state.busy&&!state.busyProactive;document.getElementById('send-button').disabled=submitting;
+ document.getElementById('cancel-button').hidden=!(state.busy||state.busyAudio);document.getElementById('observe-screen-button').disabled=state.busy;document.getElementById('observe-region-button').disabled=state.busy||state.busyAudio;document.getElementById('pause-button').textContent=t(state.paused?'観察を再開':'観察を休む');
+ if(state.busy)setStatus('少し待ってほしいのです…');else if(['少し待ってほしいのです…','考えているのです…'].includes(statusSource))setStatus('');
+}
 i18n.apply(document,language);api.onState(render);api.state().then(render).catch(()=>setStatus('設定を読み込めませんでした。'));
 api.onReply(reply=>{if(reply.status==='start'){if(reply.proactive)api.chatReveal();setStatus('考えているのです…');}if(reply.status==='done'){api.chatReveal();setStatus('');}if(['error','cancelled','observation-error','summary-error'].includes(reply.status))setStatus(reply.detail?reply.message+'\n'+reply.detail:reply.message);});
-document.getElementById('chat-form').addEventListener('submit',async event=>{event.preventDefault();const text=input.value.trim();if(!text||(currentState?.busy&&!currentState?.busyProactive))return;try{await api.chat({text,observe:document.getElementById('observe-checkbox').checked});input.value='';setStatus('考えているのです…');}catch{setStatus('送信できませんでした。設定を確認してください。');}});
+document.getElementById('chat-form').addEventListener('submit',async event=>{
+ event.preventDefault();const draft=input.value,text=draft.trim();if(!text||submitting||(currentState?.busy&&!currentState?.busyProactive))return;
+ submitting=true;document.getElementById('send-button').disabled=true;setStatus('考えているのです…');
+ try{await api.chat({text,observe:document.getElementById('observe-checkbox').checked});if(input.value===draft){input.value='';resizeInput();}scrollLatest();}
+ catch(error){setStatus('送信できませんでした。設定を確認してください。'+(error.message?'\n'+error.message:''));}
+ finally{submitting=false;document.getElementById('send-button').disabled=false;}
+});
 document.getElementById('observe-region-button').onclick=async()=>{try{const result=await api.regionSelect();if(!result.cancelled){await api.observeNow();toggle(true);setStatus('画面を見ているのです…');}}catch(error){setStatus(error.message);}};
 document.getElementById('cancel-button').onclick=()=>api.cancel();document.getElementById('chat-close').onclick=()=>toggle(false);document.getElementById('settings-button').onclick=()=>api.openSettings();document.getElementById('pause-button').onclick=()=>api.pause();document.getElementById('chat-zoom-in').onclick=()=>api.resize(1.08);document.getElementById('chat-zoom-out').onclick=()=>api.resize(0.92);
 document.getElementById('observe-screen-button').onclick=async()=>{try{await api.observeNow();toggle(true);setStatus('画面を見ているのです…');}catch{setStatus('画面を観察できませんでした。設定を確認してください。');}};

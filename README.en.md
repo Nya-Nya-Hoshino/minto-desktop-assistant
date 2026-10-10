@@ -1,5 +1,12 @@
 # MintoAssistant
 
+## 0.5.0 Renewal
+
+- Consistent mint accents, flat controls and seven settings categories; light, dark and system themes.
+- Multiline chat: Enter sends, Shift+Enter inserts a line. Write the next draft during replies and read history without forced scrolling.
+- Ctrl+S, remembered settings category and save feedback. Fixed duplicate submissions, cleared newer drafts and settings loading blocked by display enumeration errors.
+- Existing Live2D, Japanese speech, screen companionship, relationship saves and lightweight tools remain available.
+
 ## 0.4.0 lightweight tools
 
 Mint can inspect files, search folders and run PowerShell commands in the existing chat. Optional MCP and Skill settings stay collapsed in the familiar settings page. Current-user tool access is fully autonomous; no per-call approval is requested. Expand tool activity to inspect results and use Cancel to stop. Read [the tool guide](docs/TOOLS.en.md) for exact configuration and limits.
@@ -32,7 +39,7 @@ The source repository contains the application code and documentation. Copyright
 
 ## Run a local distribution
 
-For the installer edition, run `MintoAssistant-Setup-0.4.0-windows-x64.exe` and select an installation directory. Installation is for the current Windows user.
+For the installer edition, run `MintoAssistant-Setup-0.5.0-windows-x64.exe` and select an installation directory. Installation is for the current Windows user.
 
 For the portable edition, extract the complete ZIP into a writable directory and run `MintoAssistant.exe`. Keep `portable.flag`, `resources`, and all DLLs together with the executable. Portable user data is stored in its adjacent `data` directory.
 

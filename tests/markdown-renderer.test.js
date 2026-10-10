@@ -6,7 +6,7 @@ class Element {
  constructor(tag='div'){this.tagName=tag.toUpperCase();this.children=[];this.listeners={};this.attributes={};this.textContent='';this.innerHTML='';this.hidden=false;this.value='';this.style={setProperty(){}};}
  append(...nodes){this.children.push(...nodes);} appendChild(node){this.append(node);return node;} replaceChildren(...nodes){this.children=nodes;} addEventListener(name,callback){this.listeners[name]=callback;} setAttribute(name,value){this.attributes[name]=String(value);} getAttribute(name){return this.attributes[name];} focus(){} setPointerCapture(){}
 }
-function documentFor(html){const nodes=new Map(),listeners={},properties=new Map();for(const match of html.matchAll(/<([a-z]+)[^>]*\bid="([^"]+)"[^>]*>/g)){const node=new Element(match[1]);node.id=match[2];node.hidden=/\bhidden(?:\s|>)/.test(match[0]);for(const attribute of match[0].matchAll(/([a-z-]+)="([^"]*)"/g))node.setAttribute(attribute[1],attribute[2]);nodes.set(node.id,node);}return {nodes,listeners,properties,title:'',documentElement:{style:{setProperty:(key,value)=>properties.set(key,value)}},getElementById:id=>nodes.get(id),createElement:tag=>new Element(tag),addEventListener:(name,callback)=>listeners[name]=callback};}
+function documentFor(html){const nodes=new Map(),listeners={},properties=new Map();for(const match of html.matchAll(/<([a-z]+)[^>]*\bid="([^"]+)"[^>]*>/g)){const node=new Element(match[1]);node.id=match[2];node.hidden=/\bhidden(?:\s|>)/.test(match[0]);for(const attribute of match[0].matchAll(/([a-z-]+)="([^"]*)"/g))node.setAttribute(attribute[1],attribute[2]);nodes.set(node.id,node);}return {nodes,listeners,properties,title:'',documentElement:{setAttribute(){},style:{setProperty:(key,value)=>properties.set(key,value)}},getElementById:id=>nodes.get(id),createElement:tag=>new Element(tag),addEventListener:(name,callback)=>listeners[name]=callback};}
 const settle=()=>new Promise(resolve=>setImmediate(resolve));
 const ui={language:'zh-CN',font_family:'Microsoft YaHei',font_size:14};
 const original='  # 设置\r\n\r\n| 字段 | 值 |\r\n| --- | --- |\r\n| Exact_ID | **原文** |\r\n\r\n```js\r\nconst Exact_ID = "<unsafe>";\r\n```\r\n\r\n- 原文\r\n- 第二行\r\n';
@@ -31,6 +31,31 @@ test('assistant context menu uses the exact stored message index without alterin
 });
 test('context menu failure produces the localized reader error',async()=>{
  const app=await chat([{role:'assistant',content:'Reply'}],{markdownMenu:async()=>{throw new Error('Exact diagnostic');}}),content=app.document.getElementById('chat-history').children[0].children[1];assert.equal(typeof content.listeners.contextmenu,'function');await content.listeners.contextmenu({preventDefault(){},stopPropagation(){}});assert.equal(app.document.getElementById('chat-status').textContent,'无法打开 Markdown 阅读窗口');
+});
+
+test('chat submission prevents duplicate requests and preserves a newer draft',async()=>{
+ const resolvers=[];let calls=0;const app=await chat([],{chat:()=>{calls++;return new Promise(done=>resolvers.push(done));}}),node=id=>app.document.getElementById(id);
+ node('chat-input').value='First message';const submit=node('chat-form').listeners.submit;
+ const pending=submit({preventDefault(){}}),duplicate=submit({preventDefault(){}});
+ node('chat-input').value='Next draft';for(const resolve of resolvers)resolve({accepted:true});await Promise.all([pending,duplicate]);assert.equal(calls,1);assert.equal(node('chat-input').value,'Next draft');
+});
+
+test('chat keeps rejected input and displays the actual error',async()=>{
+ const app=await chat([],{chat:async()=>{throw new Error('Exact diagnostic');}}),node=id=>app.document.getElementById(id);node('chat-input').value='Keep this text';
+ await node('chat-form').listeners.submit({preventDefault(){}});assert.equal(node('chat-input').value,'Keep this text');assert.match(node('chat-status').textContent,/Exact diagnostic/);
+});
+
+test('chat Enter sends, Shift+Enter and IME confirmation do not send',async()=>{
+ const app=await chat([]),input=app.document.getElementById('chat-input');let submitted=0,prevented=0;app.document.getElementById('chat-form').requestSubmit=()=>submitted++;
+ assert.equal(typeof input.listeners.keydown,'function');
+ for(const extra of [{shiftKey:true},{isComposing:true},{keyCode:229}])input.listeners.keydown({key:'Enter',preventDefault:()=>prevented++,...extra});
+ assert.equal(submitted,0);assert.equal(prevented,0);input.listeners.keydown({key:'Enter',preventDefault:()=>prevented++});assert.equal(submitted,1);assert.equal(prevented,1);
+});
+
+test('incoming replies preserve history position until latest is requested',async()=>{
+ const app=await chat([{role:'assistant',content:'Old reply'}]),node=id=>app.document.getElementById(id),history=node('chat-history');history.scrollHeight=2000;history.clientHeight=300;history.scrollTop=120;
+ app.events.state({...app.value,save:{...app.value.save,messages:[...app.value.save.messages,{role:'assistant',content:'New reply'}]}});
+ assert.equal(history.scrollTop,120);assert.equal(node('chat-latest').hidden,false);node('chat-latest').onclick();assert.equal(history.scrollTop,history.scrollHeight);assert.equal(node('chat-latest').hidden,true);
 });
 test('reader preserves exact Markdown source and switches between preview and source',async()=>{
  const app=await reader(),node=id=>app.document.getElementById(id);assert.equal(node('markdown-source').textContent,original);assert.equal(node('markdown-preview').hidden,false);assert.equal(node('markdown-source').hidden,true);assert.equal(node('markdown-preview-tab').getAttribute('aria-selected'),'true');

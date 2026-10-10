@@ -2,6 +2,28 @@
 'use strict';
 // Keys are exact source strings. Technical model IDs, user content and Japanese character speech are never translated.
 const rows=[
+["想说什么都可以，也可以让ミント一起看看屏幕。", "話したいことを聞かせてほしいのです。画面も一緒に見られるのですよ。", "Tell Minto what's on your mind, or look at your screen together."],
+["查看最新消息", "最新のメッセージへ", "Latest messages"],
+["聊天输入", "メッセージ入力", "Message input"],
+["Enter 发送 · Shift+Enter 换行", "Enter で送信 · Shift+Enter で改行", "Enter to send · Shift+Enter for a new line"],
+["正在保存…", "保存中…", "Saving…"],
+["设置仍在加载，请稍后再试。", "設定を読み込み中です。少し待ってからお試しください。", "Settings are still loading. Please try again shortly."],
+["已保存提交的设置，后续修改尚未保存。", "送信した設定は保存しました。その後の変更は未保存です。", "Submitted settings saved. Your newer edits are still unsaved."],
+["屏幕列表读取失败：{detail}", "画面一覧を取得できませんでした：{detail}", "Could not load displays: {detail}"],
+["填写语音服务地址后，再读取模型。", "音声サービスのアドレスを入力してから、モデルを読み込んでください。", "Enter the speech service address before loading models."],
+["外观与启动", "外観と起動", "Appearance & startup"],
+["模型连接", "モデル接続", "Model connections"],
+["语音", "音声", "Speech"],
+["角色与关系", "ミントと関係", "Minto & relationship"],
+["存档与数据", "セーブとデータ", "Saves & data"],
+["设置分类", "設定カテゴリー", "Settings categories"],
+["主题", "テーマ", "Theme"],
+["跟随系统", "システムに従う", "Follow system"],
+["浅色", "ライト", "Light"],
+["深色", "ダーク", "Dark"],
+["主题立即预览，保存后应用到所有窗口。", "テーマをすぐにプレビューし、保存すると全ウィンドウに適用します。", "Preview the theme here; save to apply it to all windows."],
+["界面主题无效", "テーマが無効です", "Invalid interface theme"],
+
 ['Markdown 阅读','Markdown ビューアー','Markdown reader'],['以 Markdown 阅读','Markdown で読む','Read as Markdown'],['预览','プレビュー','Preview'],['原文','原文','Source'],['无法打开 Markdown 阅读窗口','Markdown ビューアーを開けません','Could not open Markdown reader'],
 ["回复 JSON 不完整或格式无效", "返事の JSON が不完全または無効です", "Reply JSON is incomplete or invalid"],
 ["接口返回的 JSON 不完整，请稍后重试", "API の JSON 応答が不完全です。少し待って再試行してください", "API JSON response is incomplete; try again shortly"],
