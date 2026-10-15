@@ -38,3 +38,7 @@ summary { font-size: calc(13px * var(--minto-ui-scale)); font-weight: 500; }
   .renewal-label { display: none; }
 }
 @media (max-width: 520px) { .grid { grid-template-columns: minmax(0,1fr); } .settings-header { flex-wrap: wrap; } }
+
+#diagnostic-records { max-height:280px; overflow:auto; }
+#diagnostic-records pre { white-space:pre-wrap; overflow-wrap:anywhere; font:12px/1.5 Consolas,monospace; user-select:text; }
+#diagnostic-records details { margin:8px 0; }

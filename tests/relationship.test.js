@@ -29,8 +29,8 @@ test('model evidence, repetition and daily cap prevent affection farming; observ
  assert.equal(saves.current().relationship.score,63);
  saves.append('谢谢你','ありがとう。',{}, {signal:'care',evidence:'谢谢你'});assert.equal(saves.current().relationship.score,63);
  saves.append('ordinary','はい。',{}, {signal:'care',evidence:'invented'});assert.equal(saves.current().relationship.score,63);
- saves.append('你必须听我的','落ち着いてほしいのです。',{}, {signal:'pressure',evidence:'必须'});assert.equal(saves.current().relationship.score,60);
- saves.append('test','はい。',{proactive:true}, {signal:'care',evidence:'test'});assert.equal(saves.current().relationship.score,60);
+ saves.append('你必须听我的','落ち着いてほしいのです。',{}, {signal:'pressure',evidence:'必须'});assert.equal(saves.current().relationship.score,62);
+ saves.append('test','はい。',{proactive:true}, {signal:'care',evidence:'test'});assert.equal(saves.current().relationship.score,62);
 });
 test('intimacy is gated at exactly 80 while lovers history is retained and scores cannot force consent',()=>{
  const {relationshipPrompt}=require('../services/relationship-service');

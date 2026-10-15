@@ -3,7 +3,8 @@ const api=window.minto,i18n=window.MintoI18n;let state,dirty=false,language='zh-
 const groups={agent:['enabled','working_directory','max_steps','command_timeout_seconds','mcp_servers_json','skill_directories_json'],relationship:['daily_positive_limit'],ui:['language','theme','launch_at_login','font_family','font_size'],llm:['provider','api_base','model','reasoning_effort','multimodal'],vision:['provider','api_base','model','reasoning_effort'],voice:['enabled','engine','api_base','model_id','speaker_name','style','length','style_weight'],observation:['enabled','display_id','interval_seconds','cooldown_seconds','capture_mode','region_x','region_y','region_width','region_height']};
 const element=id=>document.getElementById(id),t=(source,values)=>i18n.translate(language,source,values);
 function status(id,source,values,details=[]){statusRecords.set(id,{source,values,details});element(id).textContent=[i18n.localizeError(language,t(source,values)),...details.map(detail=>i18n.localizeError(language,detail))].join('\n');}
-let voiceModels={};
+let voiceModels={},memoryDirty=false;
+element('save-summary').addEventListener('input',()=>{memoryDirty=true;});
 function voiceOptions(config){
  const option=(value,label)=>{const node=document.createElement('option');node.value=value;node.textContent=label;return node;};
  const modelOptions=Object.entries(voiceModels).map(([id,info])=>option(id,id+' · '+info.model_path.split(/[\\/]/).at(-1)));
@@ -25,7 +26,7 @@ function settingsRender(data){window.MintoAppearance.apply(document,data.ui);lan
 function stateRender(value){
  window.MintoAppearance.apply(document,dirty&&state?{...value.settings.ui,theme:element('ui-theme').value}:value.settings.ui);element('ui-launch_at_login').disabled=!value.startupAvailable;element('startup-hint').textContent=t(value.startupAvailable?'免安装版启用自启后，请保持程序目录位置不变。':'开机自启仅支持打包后的应用');
  if(!dirty)for(const key of groups.ui){const node=element('ui-'+key);if(node.type==='checkbox')node.checked=value.settings.ui[key];else node.value=value.settings.ui[key];}
- const previous=state,changed=language!==value.settings.ui.language;state=value;language=value.settings.ui.language;element('ui-language').value=language;if(changed)localize();
+ const previous=state;if(previous?.save.id!==value.save.id)memoryDirty=false;const changed=language!==value.settings.ui.language;state=value;language=value.settings.ui.language;element('ui-language').value=language;if(changed)localize();
  if(!previous||JSON.stringify(previous.settings.observation)!==JSON.stringify(value.settings.observation))regionRender(value.settings.observation);element('data-directory-path').textContent=value.dataRoot;const selected=element('save-list').value||value.save.id;
  element('save-list').replaceChildren(...value.saves.map(save=>{const option=document.createElement('option');option.value=save.id;option.textContent=save.name+(save.active?t(' · 当前'):'');return option;}));element('save-list').value=value.saves.some(save=>save.id===selected)?selected:value.save.id;
  saveDetail(!previous||previous.save.id!==value.save.id||previous.save.updatedAt!==value.save.updatedAt);
@@ -35,9 +36,12 @@ function stateRender(value){
  const time=date=>date?new Date(date).toLocaleTimeString(language):t('尚无记录');
  status('observation-times','上次观察 {attempt} · 上次主动搭话 {spoken}',{attempt:time(value.observation.lastAttemptAt),spoken:time(value.observation.lastSpokenAt)});
  element('observation-error').textContent=value.observation.detail||'';
+ const categories={api:'接口失败',response_format:'接口响应格式错误',reply_format:'回复格式错误',japanese_validation:'日语校验失败',internal:'内部错误',capture:'截图失败'};
+ element('diagnostic-records').replaceChildren(...(value.diagnostics||[]).slice(0,20).map(record=>{const details=document.createElement('details'),title=document.createElement('summary'),body=document.createElement('pre');title.textContent=record.at+' · '+t(categories[record.category]||record.category);body.textContent=JSON.stringify(record,null,2);details.append(title,body);return details;}));
+ if(value.dataCheck)status('data-check-status','启动核对：{saves} 个存档 · {messages} 条消息',{saves:value.dataCheck.saves.length,messages:value.dataCheck.messages});
  status('voice-runtime-status','运行状态：{status}',{status:value.voiceStatus});element('pause-observation').textContent=t(value.paused?'恢复主动观察':'暂停主动观察');
 }
-function saveDetail(refreshFields=true){if(!state)return;const selected=state.saves.find(save=>save.id===element('save-list').value);if(refreshFields)element('save-name').value=selected?.name||'';if(selected?.id===state.save.id){if(refreshFields)element('save-summary').value=state.save.summary;status('save-info','完整对话 {count} 条 · 更新于 {date}',{count:state.save.messages.length,date:state.save.updatedAt});}else{if(refreshFields)element('save-summary').value='';status('save-info','切换后查看此存档的对话数量和摘要。');}}
+function saveDetail(refreshFields=true){if(!state)return;const selected=state.saves.find(save=>save.id===element('save-list').value);if(refreshFields)element('save-name').value=selected?.name||'';if(selected?.id===state.save.id){if(refreshFields&&!memoryDirty&&document.activeElement!==element('save-summary'))element('save-summary').value=state.save.summary;status('save-info','完整对话 {count} 条 · 更新于 {date}',{count:state.save.messages.length,date:state.save.updatedAt});}else{if(refreshFields)element('save-summary').value='';status('save-info','切换后查看此存档的对话数量和摘要。');}}
 function regionRender(observation){for(const key of ['capture_mode','region_x','region_y','region_width','region_height'])element('observation-'+key).value=observation[key];element('observation-display_id').value=observation.display_id;status('region-summary',observation.region_width&&observation.region_height?'已选区域：宽 {width}% · 高 {height}%':'尚未选择区域',{width:Math.round(observation.region_width*100),height:Math.round(observation.region_height*100)});}
 element('region-select').onclick=async()=>{try{const display_id=element('observation-display_id').value;if(!display_id)throw new Error(t('请在设置中选择要观察的屏幕'));const result=await api.regionSelect({display_id});if(!result.cancelled){regionRender(result.observation);state.settings.observation=result.observation;status('settings-status','观察区域已保存。');}}catch(error){status('settings-status',error.message);}};
 async function refreshDisplays(selected=element('observation-display_id').value){const displays=await api.displays();const empty=document.createElement('option');empty.value='';empty.textContent=t('请选择屏幕');element('observation-display_id').replaceChildren(empty,...displays.map(display=>{const option=document.createElement('option');option.value=display.display_id;option.textContent=display.name+' · '+display.display_id;return option;}));element('observation-display_id').value=selected;}
@@ -80,3 +84,6 @@ for(const button of document.querySelectorAll('[data-settings-page]'))button.onc
 };
 try{const page=window.localStorage.getItem('minto.settings.page');for(const button of document.querySelectorAll('[data-settings-page]'))if(button.dataset.settingsPage===page)button.onclick();}catch{}
 element('ui-theme').onchange=()=>{markDirty();if(state)window.MintoAppearance.apply(document,{...state.settings.ui,theme:element('ui-theme').value});};
+
+element('diagnostics-export').onclick=async()=>{try{await api.diagnosticsExport();}catch(error){status('settings-status',error.message);}};
+for(const action of ['save','delete','refresh'])element('memory-'+action).onclick=async()=>{try{if(element('save-list').value!==state.save.id)throw new Error(t('请先切换到要编辑的存档'));const result=action==='refresh'?await api.memoryRefresh():await api.memoryEdit({saveId:state.save.id,text:action==='delete'?'':element('save-summary').value});memoryDirty=false;stateRender(result);element('save-summary').value=result.save.summary;status('save-status','记忆已更新。');}catch(error){status('save-status',error.message);}};

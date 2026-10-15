@@ -14,7 +14,7 @@ function settings(){return {ui:{language:'zh-CN',theme:'system',launch_at_login:
 function state(){return {settings:settings(),startupAvailable:true,dataRoot:'D:/Data',paused:false,voiceStatus:'已关闭',save:{id:'save-1',name:'One',updatedAt:'now',skin:'normal',summary:'',messages:[],relationship:{score:60}},saves:[{id:'save-1',name:'One',active:true}],skins:[],observation:{status:'已关闭',detail:''},relationshipStage:'温暖',busy:false,busyAudio:false};}
 async function renderer(file,overrides={}){
  const document=documentFor(read(file.replace('.js','.html'))),events={},value=state();
- const api={state:async()=>value,onState:callback=>events.state=callback,onReply:callback=>events.reply=callback,onAgent:callback=>events.agent=callback,voiceModels:async()=>({}),displays:async()=>[],settingsSave:async data=>{value.settings=data;return data;},...overrides};
+ const api={state:async()=>value,onState:callback=>events.state=callback,onReasoning:()=>{},onReply:callback=>events.reply=callback,onAgent:callback=>events.agent=callback,voiceModels:async()=>({}),displays:async()=>[],settingsSave:async data=>{value.settings=data;return data;},...overrides};
  const context=vm.createContext({document,window:{minto:api,MintoI18n:{...i18n,apply(){}},MintoAppearance:{apply(){}},addEventListener(){}},console});vm.runInContext(read(file),context);await new Promise(resolve=>setImmediate(resolve));return {document,events,api,value,context};
 }
 test('preload exposes exact agent test, skill import and removable agent event subscription',async()=>{

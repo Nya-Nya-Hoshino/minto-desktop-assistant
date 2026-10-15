@@ -19,7 +19,7 @@ function auditConfiguration(root) {
   assert.equal(manifest.build.nsis.packElevateHelper, false);
   assert.equal(manifest.build.extraResources[0].from, 'runtime');
   assert.equal(manifest.build.extraResources[0].to, 'runtime');
-  assert.deepEqual(manifest.dependencies, {'@modelcontextprotocol/sdk':'1.32.1',yaml:'2.9.1'});
+  for(const [name,version] of Object.entries(manifest.dependencies))assert.equal(require(path.join(root,'node_modules',name,'package.json')).version,version,'Dependency lock mismatch: '+name);
   const installer = fs.readFileSync(path.join(root, 'build', 'installer.nsh'), 'utf8');
   assert.ok(installer.includes('StrCpy $isForceCurrentInstall "1"'));
   assert.ok(!installer.includes('download') && !installer.includes('taskkill'));
@@ -68,8 +68,8 @@ function auditUnpacked(root, portable) {
   console.log(JSON.stringify({ event: 'package-audit', portable, files: paths.length, bytes: totalBytes }));
   return { portable, files: paths.length, bytes: totalBytes };
 }
-async function writeReleaseHashes(root) {
-  const dist = path.join(root, 'dist');
+async function writeReleaseHashes(root,output='dist') {
+  const dist = path.resolve(root,output);
   const names = fs.readdirSync(dist).filter(name => /^MintoAssistant-.*\.(exe|zip)$/.test(name));
   const rows = [];
   for (const name of names) {

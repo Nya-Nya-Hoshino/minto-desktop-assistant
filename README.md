@@ -123,3 +123,7 @@ The inherited Apache-2.0 `LICENSE` and `NOTICE` are retained. Component notices 
 ## 0.2.0 interaction update
 
 A short click opens a separate translucent chat window. Holding the character does not zoom or open chat; scrolling while holding it does not resize it. Move chat using its title bar and resize it using its edges, lower-right handle or −/＋ buttons. Move and resize the character independently with dragging, scrolling or its −/＋ controls. Place the lower body below the display edge to leave the upper body visible, then drag the visible character or its top handle back up. A visible region remains accessible so the character cannot be completely lost off-screen. Updates preserve settings, saves and imported voice models in the existing data directory.
+
+## 0.5.5
+
+Version 0.5.5 adds verified profile backups, redacted observation diagnostics, editable save-specific memory, clearer affinity feedback, validated streamed replies and multi-image/PDF/DOCX/text attachments. Provider reasoning is displayed only when actually returned. High-affinity personality remains respectful of refusal.

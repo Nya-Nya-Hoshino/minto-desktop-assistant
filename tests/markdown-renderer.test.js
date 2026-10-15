@@ -19,7 +19,7 @@ async function reader(initial={markdown:original,ui},overrides={}){
 }
 async function chat(messages,overrides={}){
  const document=documentFor(read('renderer/chat.html')),events={},requests=[],value={settings:{ui},save:{id:'Save_Exact',messages,relationship:{score:60}},relationshipStage:'温暖',busy:false,busyAudio:false,paused:false};
- const api={state:async()=>value,onState:callback=>events.state=callback,onAgent:callback=>events.agent=callback,onReply:callback=>events.reply=callback,markdownMenu:async data=>requests.push(JSON.parse(JSON.stringify(data))),...overrides};
+ const api={state:async()=>value,onState:callback=>events.state=callback,onAgent:callback=>events.agent=callback,onReasoning:()=>{},onReply:callback=>events.reply=callback,markdownMenu:async data=>requests.push(JSON.parse(JSON.stringify(data))),...overrides};
  vm.runInNewContext(read('renderer/chat.js'),{document,window:{minto:api,MintoI18n:{...i18n,apply(){}},MintoAppearance:appearance,addEventListener(){}},console});await settle();return {document,events,requests,value};
 }
 test('assistant context menu uses the exact stored message index without altering chat text',async()=>{

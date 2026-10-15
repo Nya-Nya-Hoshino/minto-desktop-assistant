@@ -29,3 +29,13 @@ meter::-webkit-meter-optimum-value { background: var(--accent); }
 #agent-activity summary { overflow-wrap: anywhere; }
 #agent-activity pre { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; user-select: text; margin: 6px 0; }
 #agent-activity .tool-error { color: var(--danger); }
+
+#reasoning-panel { max-height: 150px; overflow:auto; font-size:12px; margin:6px 0; }
+#reasoning-panel pre,.message pre { white-space:pre-wrap; overflow-wrap:anywhere; font:inherit; }
+.message details { font-size:12px; color:var(--text-secondary); margin-top:6px; }
+.message .typing::after { content:'▍'; color:var(--accent); animation:minto-caret 1s steps(2) infinite; }
+@keyframes minto-caret { 50% { opacity:0; } }
+@media (prefers-reduced-motion:reduce) { .message .typing::after { animation:none; } }
+#attachment-list { display:flex; flex-wrap:wrap; gap:4px; max-height:72px; overflow:auto; margin:4px 0; }
+#attachment-list[hidden],#reasoning-panel[hidden] { display:none; }
+#attachment-list button { font-size:11px; padding:3px 6px; max-width:100%; overflow-wrap:anywhere; }

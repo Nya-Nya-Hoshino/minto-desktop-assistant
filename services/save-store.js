@@ -5,7 +5,7 @@ const {randomUUID}=require('node:crypto');
 const {initialRelationship,validateRelationship,applyRelationship}=require('./relationship-service');
 function checkedMetadata(value){
  if(!value||Array.isArray(value)||typeof value!=='object')throw new Error('存档消息附加信息损坏');
- const rules={emotion:v=>typeof v==='string'&&v.length<=80,pose:v=>typeof v==='string'&&v.length<=80,proactive:v=>typeof v==='boolean',screenSummary:v=>typeof v==='string'&&v.length<=6000,observedAt:v=>v===null||(typeof v==='string'&&Number.isFinite(Date.parse(v))),display_id:v=>v===null||(typeof v==='string'&&v.length<=200),affectionDelta:v=>Number.isInteger(v)&&v>=-3&&v<=1,affectionSignal:v=>['neutral','care','repair','hostility','pressure'].includes(v)};
+ const rules={emotion:v=>typeof v==='string'&&v.length<=80,pose:v=>typeof v==='string'&&v.length<=80,proactive:v=>typeof v==='boolean',screenSummary:v=>typeof v==='string'&&v.length<=6000,observedAt:v=>v===null||(typeof v==='string'&&Number.isFinite(Date.parse(v))),display_id:v=>v===null||(typeof v==='string'&&v.length<=200),reasoning:v=>typeof v==='string'&&v.length<=12000,memoryEdit:v=>typeof v==='boolean',affectionReason:v=>typeof v==='string'&&v.length<=400,affectionEvidence:v=>typeof v==='string'&&v.length<=200,attachments:v=>Array.isArray(v)&&v.length<=8&&v.every(a=>a&&Object.keys(a).sort().join(',')==='kind,name'&&typeof a.name==='string'&&a.name.length<=240&&['image','document'].includes(a.kind)),affectionDelta:v=>Number.isInteger(v)&&v>=-3&&v<=1,affectionSignal:v=>['neutral','care','repair','hostility','pressure'].includes(v)};
  for(const [key,item]of Object.entries(value))if(!Object.hasOwn(rules,key)||!rules[key](item))throw new Error('存档消息附加信息损坏');
  return structuredClone(value);
 }
@@ -27,19 +27,21 @@ class SaveStore {
   current(){return this.read(this.index.active);}
   select(id){this.read(id);this.index.active=id;this.persistIndex();return this.current();}
   write(save){atomicWrite(this.file(save.id),save);const slot=this.index.slots.find(x=>x.id===save.id);slot.name=save.name;slot.updatedAt=save.updatedAt;this.persistIndex();return save;}
-  append(user,assistant,metadata={},assessment,relationshipOptions={}){const s=this.current();const at=new Date().toISOString();const change=applyRelationship(s.relationship,String(user),assessment,{proactive:metadata.proactive===true,at,dailyPositiveLimit:relationshipOptions.dailyPositiveLimit});s.relationship=change.relationship;const checked=checkedMetadata(metadata);if(assessment){checked.affectionDelta=change.delta;checked.affectionSignal=change.signal;}s.messages.push({role:'user',content:String(user),at},{role:'assistant',content:String(assistant),at,metadata:checked});s.updatedAt=at;return this.write(s);}
-  updateState(data){const s=this.current();if(typeof data.skin==='string')s.skin=data.skin;if(typeof data.summary==='string')s.summary=data.summary;s.updatedAt=new Date().toISOString();return this.write(s);}
+  append(user,assistant,metadata={},assessment,relationshipOptions={}){const s=this.current();const at=new Date().toISOString();const change=applyRelationship(s.relationship,String(user),assessment,{proactive:metadata.proactive===true,at,dailyPositiveLimit:relationshipOptions.dailyPositiveLimit});s.relationship=change.relationship;const checked=checkedMetadata(metadata);if(assessment){checked.affectionDelta=change.delta;checked.affectionSignal=change.signal;checked.affectionReason=change.reason||'';checked.affectionEvidence=change.evidence||'';}s.messages.push({role:'user',content:String(user),at},{role:'assistant',content:String(assistant),at,metadata:checked});s.updatedAt=at;return this.write(s);}
+  updateState(data){const s=this.current();if(typeof data.skin==='string')s.skin=data.skin;if(typeof data.summary==='string'&&!s.memoryControl?.manual)s.summary=data.summary;s.updatedAt=new Date().toISOString();return this.write(s);}
+  editMemory(text){if(typeof text!=='string'||text.length>6000)throw new Error('记忆须在 6000 字以内');const s=this.current(),at=new Date().toISOString();s.summary=text;s.memoryControl={manual:true,editedAt:at};s.messages.push({role:'user',content:text?'記憶の訂正（本人による編集）：\n'+text:'長期記憶を削除しました。削除前の記憶を再生成しないでください。',at,metadata:{memoryEdit:true}});s.updatedAt=at;return this.write(s);}
+  enableMemoryRefresh(){const s=this.current();s.memoryControl={manual:false,editedAt:new Date().toISOString()};return this.write(s);}
   context(rounds=10){return this.current().messages.slice(-Math.max(1,Math.min(100,rounds))*2).map(({role,content})=>({role,content}));}
   rename(id,name){const s=this.read(id);s.name=String(name).trim().slice(0,80);if(!s.name)throw new Error('名称不能为空');s.updatedAt=new Date().toISOString();return this.write(s);}
   remove(id){const file=this.file(id);this.index.slots=this.index.slots.filter(s=>s.id!==id);if(!this.index.slots.length)this.create('新しいセーブ');else if(this.index.active===id)this.index.active=this.index.slots[0].id;this.persistIndex();fs.unlinkSync(file);return this.current();}
   export(id=this.index.active){return JSON.stringify(this.read(id),null,2);}
   validate(s){if(!s||s.version!==1||typeof s.name!=='string'||!Array.isArray(s.messages)||s.messages.length>200000)throw new Error('不支持的存档格式');
-    if(s.relationship!==undefined)validateRelationship(s.relationship);
+    if(s.relationship!==undefined)validateRelationship(s.relationship);if(s.memoryControl!==undefined&&(!s.memoryControl||Object.keys(s.memoryControl).sort().join(',')!=='editedAt,manual'||typeof s.memoryControl.manual!=='boolean'||!Number.isFinite(Date.parse(s.memoryControl.editedAt))))throw new Error('记忆控制数据损坏');
     for(const m of s.messages){if(!m||!['user','assistant'].includes(m.role)||typeof m.content!=='string'||m.content.length>100000)throw new Error('存档对话数据损坏');if(m.metadata!==undefined)checkedMetadata(m.metadata);}
   }
   import(data){if(typeof data!=='string'||Buffer.byteLength(data)>100*1024*1024)throw new Error('存档过大');const input=JSON.parse(data);this.validate(input);
     const s=this.create(input.name+'（导入）');s.messages=input.messages.map(m=>({role:m.role,content:m.content,at:typeof m.at==='string'?m.at:s.createdAt,...(m.metadata===undefined?{}:{metadata:checkedMetadata(m.metadata)})}));
-    s.summary=typeof input.summary==='string'?input.summary:'';s.relationship=input.relationship===undefined?initialRelationship():validateRelationship(input.relationship);if(['Minto_Tuujou','minto_Pajama'].includes(input.skin))s.skin=input.skin;return this.write(s);
+    s.summary=typeof input.summary==='string'?input.summary:'';if(input.memoryControl!==undefined)s.memoryControl=structuredClone(input.memoryControl);s.relationship=input.relationship===undefined?initialRelationship():validateRelationship(input.relationship);if(['Minto_Tuujou','minto_Pajama'].includes(input.skin))s.skin=input.skin;return this.write(s);
   }
 }
 module.exports={SaveStore,atomicWrite};

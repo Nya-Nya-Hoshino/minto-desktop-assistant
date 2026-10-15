@@ -1,0 +1,4 @@
+'use strict';
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
+const {Diagnostics,Failure}=require('../services/diagnostics');
+test('observation details preserve stage and HTTP status while redacting secrets',t=>{const root=fs.mkdtempSync(path.join(os.tmpdir(),'minto-errors-'));t.after(()=>fs.rmSync(root,{recursive:true,force:true}));const d=new Diagnostics(root,()=>['ExactSecret!']);const e=new Failure('api','HTTP 401 Bearer ExactSecret!',{status:401,body:'{"api_key":"other-secret","error":"denied"}'});const report=d.record(e,{operation:'observation',stage:'reply',requestId:'ExactRequest'});assert.equal(report.category,'api');assert.equal(report.status,401);assert.equal(report.requestId,'ExactRequest');assert.equal(JSON.stringify(d.list()).includes('ExactSecret!'),false);assert.equal(JSON.stringify(d.list()).includes('other-secret'),false);assert.equal(d.list().length,1);});
