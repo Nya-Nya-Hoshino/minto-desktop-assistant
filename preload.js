@@ -2,6 +2,7 @@
 const {contextBridge,ipcRenderer}=require('electron');
 const on=(channel,callback)=>{if(typeof callback!=='function')return()=>{};const listener=(_event,value)=>callback(value);ipcRenderer.on(channel,listener);return()=>ipcRenderer.removeListener(channel,listener);};
 contextBridge.exposeInMainWorld('minto',Object.freeze({
+ qqState:()=>ipcRenderer.invoke('minto:qq-state'),qqPairing:()=>ipcRenderer.invoke('minto:qq-pairing'),qqConversation:id=>ipcRenderer.invoke('minto:qq-conversation',id),qqPolicy:data=>ipcRenderer.invoke('minto:qq-policy',data),qqMemory:data=>ipcRenderer.invoke('minto:qq-memory',data),qqSend:data=>ipcRenderer.invoke('minto:qq-send',data),qqWithdraw:data=>ipcRenderer.invoke('minto:qq-withdraw',data),qqRefresh:()=>ipcRenderer.invoke('minto:qq-refresh'),
  attachmentsImport:()=>ipcRenderer.invoke('minto:attachments-import'),memoryEdit:data=>ipcRenderer.invoke('minto:memory-edit',data),memoryRefresh:()=>ipcRenderer.invoke('minto:memory-refresh'),diagnosticsExport:()=>ipcRenderer.invoke('minto:diagnostics-export'),onReasoning:callback=>on('minto:reasoning',callback),
  markdownMenu:data=>ipcRenderer.invoke('minto:markdown-menu',data),
  agentTest:()=>ipcRenderer.invoke('minto:agent-test'),skillImport:()=>ipcRenderer.invoke('minto:skill-import'),onAgent:callback=>on('minto:agent-event',callback),

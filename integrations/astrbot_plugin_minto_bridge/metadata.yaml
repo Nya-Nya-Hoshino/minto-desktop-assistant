@@ -1,0 +1,5 @@
+name: astrbot_plugin_minto_bridge
+display_name: Minto QQ Bridge
+desc: 将 aiocqhttp OneBot v11 原始消息转交本地 Minto，发送已授权的回复。
+version: 0.6.0
+author: MintoAssistant

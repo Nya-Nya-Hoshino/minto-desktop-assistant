@@ -1,5 +1,10 @@
 # MintoAssistant
 
+## 0.6.0 QQ integration
+
+Adds a QQ management page, scoped group memory, Chinese replies and optional Japanese voice through the external AstrBot / OneBot bridge. QQ is disabled by default. Only QQ 2992576898 is master; group contexts never receive desktop private history. See [bridge setup](integrations/astrbot_plugin_minto_bridge/README.md). Real-account login and delivery require separate verification.
+
+
 ## 0.5.0 Renewal
 
 - Consistent mint accents, flat controls and seven settings categories; light, dark and system themes.

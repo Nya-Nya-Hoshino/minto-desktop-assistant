@@ -1,0 +1,9 @@
+{
+  "enabled": {"type":"bool","default":false,"description":"启用 Minto 桥接（先在桌面端明确绑定账号与存档）"},
+  "platform_id": {"type":"string","default":"","description":"AstrBot aiocqhttp 平台实例 ID（原样填写）"},
+  "bot_id": {"type":"string","default":"","description":"用户明确指定的机器人 QQ 号"},
+  "minto_url": {"type":"string","default":"","description":"Minto 配对界面显示的 http://127.0.0.1:端口"},
+  "token_file": {"type":"string","default":"","description":"仅当前用户可读的本地配对令牌文件绝对路径"},
+  "history_enabled": {"type":"bool","default":false,"description":"在 @ 或关键词唤醒时尽力补取 NapCat 最近群消息"},
+  "history_keywords": {"type":"list","default":["薄荷","ミント"],"description":"触发有限历史补取的关键词（与桌面群策略对照填写）"}
+}

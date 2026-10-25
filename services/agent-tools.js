@@ -25,9 +25,9 @@ function command(command,cwd,seconds,signal){return new Promise((resolve,reject)
  child.stdout.on('data',data=>{stdout=clipped(stdout+data.toString('utf8'));});child.stderr.on('data',data=>{stderr=clipped(stderr+data.toString('utf8'));});child.on('error',error=>finish(error));child.on('close',exit_code=>finish(pendingError,JSON.stringify({stdout,stderr,exit_code,cwd})));
 });}
 class AgentTools{
- constructor({workingDirectory,skillRoots,commandTimeout,mcp=null}){this.workingDirectory=workingDirectory;this.skills=new SkillCatalog(skillRoots);this.commandTimeout=commandTimeout;this.mcp=mcp;}
- definitions(){return [...BUILTINS.map(([name,description,parameters])=>({type:'function',function:{name,description,parameters}})),...(this.mcp?.definitions()||[])];}
- async execute(name,args,{signal}={}){signal?.throwIfAborted();const def=BUILTINS.find(x=>x[0]===name);if(!def){if(this.mcp)return this.mcp.execute(name,args,{signal});throw new Error('Unknown tool: '+name);}checkArgs(def[2],args);const full=relative=>path.resolve(this.workingDirectory,relative);
+ constructor({workingDirectory,skillRoots,commandTimeout,mcp=null,qq=null}){this.workingDirectory=workingDirectory;this.skills=new SkillCatalog(skillRoots);this.commandTimeout=commandTimeout;this.mcp=mcp;this.qq=qq;}
+ definitions(){return [...BUILTINS.map(([name,description,parameters])=>({type:'function',function:{name,description,parameters}})),...(this.mcp?.definitions()||[]),...(this.qq?.definitions()||[])];}
+ async execute(name,args,{signal}={}){signal?.throwIfAborted();const def=BUILTINS.find(x=>x[0]===name);if(!def){if(this.qq?.definitions().some(d=>d.function.name===name))return this.qq.execute(name,args,{signal});if(this.mcp)return this.mcp.execute(name,args,{signal});throw new Error('Unknown tool: '+name);}checkArgs(def[2],args);const full=relative=>path.resolve(this.workingDirectory,relative);
   if(name==='list_skills')return JSON.stringify(this.skills.list());if(name==='load_skill')return this.skills.load(args.name);if(name==='read_skill_resource')return this.skills.resource(args.name,args.path);
   if(name==='run_command')return command(args.command,args.cwd?full(args.cwd):this.workingDirectory,this.commandTimeout,signal);
   if(name==='list_directory')return clipped(JSON.stringify(fs.readdirSync(full(args.path),{withFileTypes:true}).map(x=>({name:x.name,type:x.isDirectory()?'directory':'file'}))));

@@ -1,6 +1,6 @@
 {
   "name": "minto-assistant",
-  "version": "0.5.5",
+  "version": "0.6.0",
   "description": "Minto Live2D desktop assistant with Japanese dialogue and local voice",
   "license": "Apache-2.0",
   "main": "main.js",
@@ -94,7 +94,14 @@
       "services/data-integrity.js",
       "services/diagnostics.js",
       "services/completion-stream.js",
-      "services/attachments.js"
+      "services/attachments.js",
+      "services/qq-store.js",
+      "services/qq-service.js",
+      "services/qq-reply.js",
+      "services/qq-runtime.js",
+      "renderer/qq-settings.js",
+      "renderer/qq.css",
+      "services/qq-desktop-tools.js"
     ],
     "asarUnpack": [
       "assets/minto/**/*"
@@ -151,6 +158,24 @@
       {
         "from": "docs/TOOLS.ja.md",
         "to": "docs/TOOLS.ja.md"
+      },
+      {
+        "from": "docs/QQ-SETUP.zh-CN.md",
+        "to": "docs/QQ-SETUP.zh-CN.md",
+        "filter": [
+          "**/*",
+          "!**/__pycache__{,/**/*}",
+          "!**/*.pyc"
+        ]
+      },
+      {
+        "from": "integrations/astrbot_plugin_minto_bridge",
+        "to": "integrations/astrbot_plugin_minto_bridge",
+        "filter": [
+          "**/*",
+          "!**/__pycache__{,/**/*}",
+          "!**/*.pyc"
+        ]
       }
     ],
     "win": {
