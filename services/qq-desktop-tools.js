@@ -7,7 +7,7 @@ async function authorizeQQSend(config,{userText,groups,signal},options={}){
  if(!result||Array.isArray(result)||Object.keys(result).join(',')!=='group_ids'||!Array.isArray(result.group_ids)||result.group_ids.length>groups.length||result.group_ids.some(id=>typeof id!=='string'||!groups.some(g=>g.peer_id===id)))throw new Error('QQ 指令理解返回了无效的目标群');
  return [...new Set(result.group_ids)];
 }
-function desktopQQTools({service,saveId,userText,proactive=false,authorize}){
+function desktopQQTools({service,saveId,userText,proactive=false,authorize,speak}){
  const sent=new Map();
  let authorization;
  const allowed=()=>!proactive&&service.configured()&&service.config().save_id===saveId;
@@ -26,7 +26,8 @@ function desktopQQTools({service,saveId,userText,proactive=false,authorize}){
   if(!Array.isArray(permitted)||!permitted.includes(group.peer_id))throw new Error('当前桌面指令没有要求向这个群发送消息；请明确目标或说明要发送的互动');
   groups();
   if(sent.has(group.peer_id))return sent.get(group.peer_id);
-  const result=JSON.stringify({...service.manualSend(group.id,args.text),group_id:group.peer_id,delivery_status:'queued'});sent.set(group.peer_id,result);return result;
+  const delivery=service.manualSend(group.id,args.text);
+  const job=(async()=>{let voice={voice_status:'unavailable'};if(speak)try{voice=await speak({group,text:args.text,signal});}catch(error){voice={voice_status:'failed',voice_error:error.message};}return JSON.stringify({...delivery,group_id:group.peer_id,delivery_status:'queued',...voice});})();sent.set(group.peer_id,job);return job;
  }};
 }
 module.exports={desktopQQTools,authorizeQQSend};
